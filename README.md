@@ -13,11 +13,20 @@ results but never invents numbers.
 
 **https://bstars00-rgb.github.io/OHMY-ONE/** — a self-contained, browser-only
 demo in [`web/`](web/) that reproduces the backend behavior (permission engine,
-deterministic calculations, append-only audit) with no server. Switch personas,
-ask in natural language, watch requests flow through the pipeline, see denials
-audited. Auto-deployed by [GitHub Actions](.github/workflows/deploy.yml) on every
-push to `main`. It is a **simulation for presentations** — the figures are
-representative sample data.
+deterministic calculations, append-only audit) with no server. Auto-deployed by
+[GitHub Actions](.github/workflows/deploy.yml) on every push to `main`. It is a
+**simulation for presentations** — figures are representative sample data.
+
+- **OHMY CI branding** (brand orange `#ef7f29`), light/dark themes.
+- **5 languages**: 한국어 · English · Tiếng Việt · 中文 · 日本語 (live switcher).
+- **6 personas** with real, differing permissions; switch and watch access change.
+- **Advanced finance**: monthly & annual P&L, **balance sheet** (reconciles),
+  entity revenue comparison, AR aging, budget variance, period comparison.
+- **HR analytics**: leave balance/request/approval, **leave-usage analysis by
+  entity & year** (e.g. Vietnam 2025), headcount by entity.
+- ~70 employees across Korea/Vietnam/Singapore, 3 fiscal years of ledger data.
+- Every answer shows its **provenance** (tool, permission, audit); denials are
+  audited as `PERMISSION_DENIED`.
 
 ## 1. Overview
 

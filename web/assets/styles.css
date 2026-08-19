@@ -1,36 +1,36 @@
-/* ===== OHMY ONE demo — theme tokens (light base) ===== */
+/* ===== OHMY ONE demo — OHMY CI palette (brand orange #ef7f29) ===== */
 :root{
-  --bg:#eef1f7; --surface:#ffffff; --surface-2:#f3f5fa; --raise:#ffffff;
-  --border:#dde2ec; --border-strong:#c8d0de;
-  --text:#141b28; --text-dim:#586278; --text-faint:#8a94a8;
-  --accent:#0e9f92; --accent-2:#0b7d73; --accent-wash:#dcf1ee;
-  --deny:#d63a63; --deny-wash:#fbe2e9;
-  --warn:#b9791f; --warn-wash:#f7ecd6;
-  --ok:#0e9f92; --ok-wash:#dcf1ee;
+  --bg:#f6f3ef; --surface:#ffffff; --surface-2:#f4efe8; --raise:#ffffff;
+  --border:#e7ded2; --border-strong:#d8ccbb;
+  --text:#241a12; --text-dim:#6b5d4f; --text-faint:#9a8b7b;
+  --accent:#ef7f29; --accent-2:#c9631a; --accent-wash:#fbe8d6;
+  --deny:#e0342b; --deny-wash:#fbe3e1;
+  --warn:#c9631a; --warn-wash:#fbe8d6;
+  --ok:#0f9d54; --ok-wash:#e0f3e7;
   --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --shadow:0 1px 2px rgba(20,27,40,.06),0 10px 30px rgba(20,27,40,.07);
-  --ring:0 0 0 3px rgba(14,159,146,.28);
+  --shadow:0 1px 2px rgba(40,26,12,.05),0 10px 30px rgba(40,26,12,.07);
+  --ring:0 0 0 3px rgba(239,127,41,.32);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --bg:#070a11; --surface:#101725; --surface-2:#0b111c; --raise:#141d2d;
-  --border:#212c3e; --border-strong:#2c3a52;
-  --text:#eaf0f8; --text-dim:#95a2b8; --text-faint:#67728a;
-  --accent:#2fd6c3; --accent-2:#6fe9da; --accent-wash:#0c2b29;
-  --deny:#ff6d8a; --deny-wash:#2c1420; --warn:#e6b452; --warn-wash:#2a2213;
-  --ok:#2fd6c3; --ok-wash:#0c2b29;
+  --bg:#141210; --surface:#1d1915; --surface-2:#161310; --raise:#231e18;
+  --border:#332c24; --border-strong:#463a2d;
+  --text:#f3ece3; --text-dim:#b4a595; --text-faint:#7d7060;
+  --accent:#ff934a; --accent-2:#ffb277; --accent-wash:#2c1c0f;
+  --deny:#ff6a60; --deny-wash:#2c1512; --warn:#ffb277; --warn-wash:#2c1c0f;
+  --ok:#39c47e; --ok-wash:#10281c;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 38px rgba(0,0,0,.5);
-  --ring:0 0 0 3px rgba(47,214,195,.32);
+  --ring:0 0 0 3px rgba(255,147,74,.34);
 }}
 :root[data-theme="dark"]{
-  --bg:#070a11; --surface:#101725; --surface-2:#0b111c; --raise:#141d2d;
-  --border:#212c3e; --border-strong:#2c3a52;
-  --text:#eaf0f8; --text-dim:#95a2b8; --text-faint:#67728a;
-  --accent:#2fd6c3; --accent-2:#6fe9da; --accent-wash:#0c2b29;
-  --deny:#ff6d8a; --deny-wash:#2c1420; --warn:#e6b452; --warn-wash:#2a2213;
-  --ok:#2fd6c3; --ok-wash:#0c2b29;
+  --bg:#141210; --surface:#1d1915; --surface-2:#161310; --raise:#231e18;
+  --border:#332c24; --border-strong:#463a2d;
+  --text:#f3ece3; --text-dim:#b4a595; --text-faint:#7d7060;
+  --accent:#ff934a; --accent-2:#ffb277; --accent-wash:#2c1c0f;
+  --deny:#ff6a60; --deny-wash:#2c1512; --warn:#ffb277; --warn-wash:#2c1c0f;
+  --ok:#39c47e; --ok-wash:#10281c;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 38px rgba(0,0,0,.5);
-  --ring:0 0 0 3px rgba(47,214,195,.32);
+  --ring:0 0 0 3px rgba(255,147,74,.34);
 }
 
 *{box-sizing:border-box}
@@ -45,11 +45,17 @@ button{font-family:inherit}
 /* topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:11px}
-.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent);color:#04201d;font-weight:800;flex:none}
-.mark::after{content:"◎";font-size:18px;line-height:1}
+.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:800;font-size:17px;flex:none}
 .brand h1{font-size:18px;letter-spacing:.14em;margin:0;font-weight:800}
 .brand .sub{font-size:10px;letter-spacing:.26em;color:var(--text-faint);text-transform:uppercase}
-.top-actions{display:flex;gap:8px;align-items:center}
+.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.langs{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:2px}
+.langbtn{border:0;background:transparent;color:var(--text-dim);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:12px;font-family:inherit}
+.langbtn:hover{color:var(--accent)}
+.langbtn[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+.langbtn:focus-visible{outline:none;box-shadow:var(--ring)}
+.hero-title{font-size:clamp(24px,4.5vw,36px);margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.hero-sub{max-width:64ch;margin:8px 0 0;font-size:14px}
 .theme-btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--text-dim);border-radius:9px;padding:7px 11px;cursor:pointer;font-size:13px}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent)}
 .theme-btn:focus-visible{outline:none;box-shadow:var(--ring)}
@@ -82,7 +88,7 @@ button{font-family:inherit}
 .askbar .dot{color:var(--accent)}
 .askbar input{flex:1;background:transparent;border:0;outline:none;color:var(--text);font-family:inherit;font-size:15px}
 .askbar input::placeholder{color:var(--text-faint)}
-.askbar button{border:1px solid var(--accent);background:var(--accent);color:#04201d;border-radius:9px;padding:7px 13px;font-weight:700;cursor:pointer}
+.askbar button{border:1px solid var(--accent);background:var(--accent);color:#ffffff;border-radius:9px;padding:7px 13px;font-weight:700;cursor:pointer}
 .askbar button:focus-visible{outline:none;box-shadow:var(--ring)}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
 .chip{border:1px solid var(--border);background:var(--raise);color:var(--text);border-radius:999px;padding:7px 13px;cursor:pointer;font-size:13px;display:flex;gap:7px;align-items:center}
@@ -129,7 +135,7 @@ button{font-family:inherit}
 .chip-pill.ok2{color:var(--accent-2);border-color:var(--accent);background:var(--accent-wash)}
 .chip-pill.no2{color:var(--deny);border-color:var(--deny);background:var(--deny-wash)}
 .chip-pill.dimpill{color:var(--text-faint)}
-.mini{border:1px solid var(--accent);background:var(--accent);color:#04201d;border-radius:7px;padding:2px 9px;font-size:12px;cursor:pointer;font-weight:700}
+.mini{border:1px solid var(--accent);background:var(--accent);color:#ffffff;border-radius:7px;padding:2px 9px;font-size:12px;cursor:pointer;font-weight:700}
 .mini.ghost{background:transparent;color:var(--deny);border-color:var(--deny)}
 .mini:focus-visible{outline:none;box-shadow:var(--ring)}
 

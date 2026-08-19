@@ -1,200 +1,191 @@
-/* OHMY ONE demo — UI controller. Talks only to the OHMY engine (no network). */
+/* OHMY ONE demo — UI controller (i18n + personas + render). No network. */
 (function () {
   "use strict";
   var root = document.documentElement;
   var reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var current = "E005";          // starting persona: Lucy (employee)
+  var lang = "ko";
+  var current = OHMY.PERSONAS[0]; // Lucy (employee)
   var busy = false;
+  var t = I18N.t;
 
-  var STAGES = [["user", "USER"], ["claude", "CLAUDE"], ["mcp", "MCP"], ["perm", "권한엔진"], ["sql", "SQL"], ["audit", "감사"]];
-  var CHIPS = [
-    ["HR", "내 연차 얼마나 남았어?"],
-    ["HR", "내일 연차 쓸게."],
-    ["APPROVAL", "내가 승인해야 할 것 보여줘."],
-    ["FINANCE", "이번달 매출 알려줘."],
-    ["FINANCE", "이번달 P&L 만들어줘."],
-    ["EXEC", "지난달보다 이익이 왜 줄었어?"],
-    ["EXEC", "인건비 늘고 매출 안 따라온 조직?"],
-    ["HR", "CEO 급여 알려줘."],
-  ];
+  /* ---- static-chrome localization ---- */
+  function applyI18n() {
+    document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(lang, el.getAttribute("data-i18n")); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(function (el) { el.setAttribute("placeholder", t(lang, el.getAttribute("data-i18n-ph"))); });
+    document.documentElement.lang = lang;
+  }
 
-  /* ---------- theme ---------- */
+  /* ---- theme ---- */
   document.getElementById("theme").addEventListener("click", function () {
     var cur = root.getAttribute("data-theme");
     var dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme:dark)").matches;
     root.setAttribute("data-theme", dark ? "light" : "dark");
   });
 
-  /* ---------- tabs ---------- */
-  var views = { chat: document.getElementById("view-chat"), audit: document.getElementById("view-audit"), arch: document.getElementById("view-arch") };
-  [].forEach.call(document.querySelectorAll(".tab"), function (t) {
-    t.addEventListener("click", function () {
-      [].forEach.call(document.querySelectorAll(".tab"), function (x) { x.setAttribute("aria-selected", "false"); });
-      t.setAttribute("aria-selected", "true");
-      for (var k in views) views[k].classList.add("hidden");
-      views[t.dataset.view].classList.remove("hidden");
-      if (t.dataset.view === "audit") renderAudit();
-    });
-  });
-
-  /* ---------- personas ---------- */
-  var pc = document.getElementById("personas");
-  OHMY.PERSONAS.forEach(function (no) {
-    var e = OHMY.EMP[no];
+  /* ---- language switcher ---- */
+  var langEl = document.getElementById("langs");
+  I18N.LANGS.forEach(function (L) {
     var b = document.createElement("button");
-    b.className = "persona"; b.setAttribute("aria-pressed", no === current ? "true" : "false");
-    b.innerHTML = '<span class="pn">' + e.name + '</span><span class="pr">' + e.roleKo + " · " + e.role + "</span>";
+    b.className = "langbtn"; b.textContent = L[1]; b.setAttribute("aria-pressed", L[0] === lang ? "true" : "false");
     b.addEventListener("click", function () {
-      current = no;
-      [].forEach.call(pc.children, function (c, i) { c.setAttribute("aria-pressed", OHMY.PERSONAS[i] === no ? "true" : "false"); });
-      renderPerms(); renderApprovalsPanel();
+      lang = L[0];
+      [].forEach.call(langEl.children, function (c, i) { c.setAttribute("aria-pressed", I18N.LANGS[i][0] === lang ? "true" : "false"); });
+      applyI18n(); renderPersonas(); renderChips(); renderPerms(); renderApprovalsPanel(); renderFeed(); drawPipe(0, null);
+      document.getElementById("out").innerHTML = '<div class="empty">' + t(lang, "empty") + "</div>";
+      if (!views.audit.classList.contains("hidden")) renderAudit();
     });
-    pc.appendChild(b);
+    langEl.appendChild(b);
   });
 
-  /* ---------- chips ---------- */
+  /* ---- tabs ---- */
+  var views = { chat: document.getElementById("view-chat"), audit: document.getElementById("view-audit"), arch: document.getElementById("view-arch") };
+  document.querySelectorAll(".tab").forEach(function (tb) {
+    tb.addEventListener("click", function () {
+      document.querySelectorAll(".tab").forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+      tb.setAttribute("aria-selected", "true");
+      for (var k in views) views[k].classList.add("hidden");
+      views[tb.dataset.view].classList.remove("hidden");
+      if (tb.dataset.view === "audit") renderAudit();
+    });
+  });
+
+  /* ---- personas ---- */
+  var pc = document.getElementById("personas");
+  function renderPersonas() {
+    pc.innerHTML = "";
+    OHMY.PERSONAS.forEach(function (no) {
+      var e = OHMY.emp(no);
+      var b = document.createElement("button");
+      b.className = "persona"; b.setAttribute("aria-pressed", no === current ? "true" : "false");
+      b.innerHTML = '<span class="pn">' + e.name + '</span><span class="pr">' + I18N.role(lang, e.role) + "</span>";
+      b.addEventListener("click", function () {
+        current = no;
+        [].forEach.call(pc.children, function (c, i) { c.setAttribute("aria-pressed", OHMY.PERSONAS[i] === no ? "true" : "false"); });
+        renderPerms(); renderApprovalsPanel();
+      });
+      pc.appendChild(b);
+    });
+  }
+
+  /* ---- chips ---- */
   var chipsEl = document.getElementById("chips");
-  CHIPS.forEach(function (c) {
-    var b = document.createElement("button");
-    b.className = "chip"; b.innerHTML = '<span class="tag">' + c[0] + "</span>" + c[1];
-    b.addEventListener("click", function () { submit(c[1], b); });
-    chipsEl.appendChild(b);
-  });
+  function renderChips() {
+    chipsEl.innerHTML = "";
+    I18N.CHIPS.forEach(function (c) {
+      var b = document.createElement("button");
+      b.className = "chip"; b.innerHTML = '<span class="tag">' + c.cat + "</span>" + I18N.chipLabel(lang, c.intent);
+      b.addEventListener("click", function () { runIntent(c.intent, c.args, b); });
+      chipsEl.appendChild(b);
+    });
+  }
 
-  /* ---------- ask input ---------- */
+  /* ---- ask input ---- */
   var input = document.getElementById("ask");
-  document.getElementById("send").addEventListener("click", function () { submit(input.value, null); });
-  input.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(input.value, null); });
+  document.getElementById("send").addEventListener("click", function () { submitText(input.value); });
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") submitText(input.value); });
+  function submitText(text) {
+    if (!text || !text.trim()) return;
+    var r = OHMY.route(text);
+    if (!r) { showNote(text, t(lang, "unrecognized")); input.value = ""; return; }
+    runIntent(r.intent, r.args, null, text);
+  }
 
-  /* ---------- pipeline ---------- */
+  /* ---- pipeline ---- */
+  var STAGES = ["p_user", "CLAUDE", "MCP", "p_perm", "SQL", "p_audit"];
   var pipeEl = document.getElementById("pipe");
+  function stageLabel(s) { return s.charAt(0) === "p" && s.indexOf("_") > 0 ? t(lang, s) : s; }
   function drawPipe(active, rejectAt) {
     pipeEl.innerHTML = "";
     STAGES.forEach(function (s, i) {
       var n = document.createElement("span"); n.className = "node";
-      if (rejectAt != null && i === rejectAt) n.className += " rej";
-      else if (i < active) n.className += " on";
-      n.innerHTML = '<span class="i"></span>' + s[1];
+      if (rejectAt != null && i === rejectAt) n.className += " rej"; else if (i < active) n.className += " on";
+      n.innerHTML = '<span class="i"></span>' + stageLabel(s);
       pipeEl.appendChild(n);
       if (i < STAGES.length - 1) { var a = document.createElement("span"); a.className = "arrow"; a.textContent = "›"; pipeEl.appendChild(a); }
     });
   }
-  drawPipe(0, null);
 
-  /* ---------- submit flow ---------- */
-  function submit(text, chip) {
-    if (busy || !text || !text.trim()) return;
-    var routed = OHMY.route(text);
-    if (!routed) {
-      renderMsg(text, { ok: true, tool: "—", perm: "—", risk: "READ", audit: "—", html: "<p>요청을 이해하지 못했어요. 예: “내 연차 얼마나 남았어?”, “이번달 P&L 만들어줘”, “Lucy 연차 승인해줘”.</p>" }, "note");
-      if (input) input.value = "";
-      return;
-    }
+  /* ---- run ---- */
+  function runIntent(intent, args, chip, rawText) {
+    if (busy) return;
+    var res = OHMY.call(current, intent, args);
+    if (!res) { showNote(rawText || intent, t(lang, "unrecognized")); return; }
     busy = true; if (chip) chip.setAttribute("disabled", "");
-    var res = OHMY.call(current, routed.tool, routed.args);
-    var allowed = res && res.ok;
-    var rejectStage = 3;
-    var step = 0;
+    var allowed = res.ok, rejectStage = 3, step = 0;
     (function tick() {
-      if (allowed) {
-        step++; drawPipe(step, null);
-        if (step < STAGES.length) schedule(tick); else done();
-      } else {
-        step++;
-        if (step < rejectStage) { drawPipe(step, null); schedule(tick); }
-        else { drawPipe(rejectStage, rejectStage); schedule(function () { drawPipe(6, rejectStage); done(); }); }
-      }
+      if (allowed) { step++; drawPipe(step, null); if (step < STAGES.length) sc(tick); else fin(); }
+      else { step++; if (step < rejectStage) { drawPipe(step, null); sc(tick); } else { drawPipe(rejectStage, rejectStage); sc(function () { drawPipe(6, rejectStage); fin(); }); } }
     })();
-    function schedule(f) { if (reduce) f(); else setTimeout(f, 140); }
-    function done() {
-      renderMsg(text, res, res.blocked ? "crit" : (allowed ? "ok" : "deny"));
+    function sc(f) { if (reduce) f(); else setTimeout(f, 130); }
+    function fin() {
+      var q = rawText || I18N.chipLabel(lang, intent);
+      renderMsg(q, res);
       renderPerms(); renderApprovalsPanel(); renderFeed();
-      if (chip) chip.removeAttribute("disabled");
-      if (input) input.value = "";
-      busy = false;
+      if (chip) chip.removeAttribute("disabled"); if (input) input.value = ""; busy = false;
     }
   }
 
-  /* ---------- render a message ---------- */
+  /* ---- message render ---- */
   var outEl = document.getElementById("out");
-  function renderMsg(q, res, kind) {
-    var e = OHMY.EMP[current];
-    var m = document.createElement("div");
-    m.className = "msg" + (kind === "deny" ? " deny" : kind === "crit" ? " crit" : "");
-    var head = '<div class="q"><b>' + e.name + "</b> · " + e.roleKo + " &nbsp;—&nbsp; “" + esc(q) + "”</div>";
+  function showNote(q, text) {
+    var m = document.createElement("div"); m.className = "msg";
+    m.innerHTML = qhead(q) + '<div class="a"><p>' + esc(text) + "</p></div>";
+    prepend(m);
+  }
+  function qhead(q) { var e = OHMY.emp(current); return '<div class="q"><b>' + esc(e.name) + "</b> · " + I18N.role(lang, e.role) + " &nbsp;—&nbsp; “" + esc(q) + "”</div>"; }
+  function renderMsg(q, res) {
+    var kind = res.blocked ? "crit" : (res.ok ? "ok" : "deny");
+    var m = document.createElement("div"); m.className = "msg" + (kind === "deny" ? " deny" : kind === "crit" ? " crit" : "");
+    var body = OHMY_RENDER.render(lang, res);
     var prov;
-    if (kind === "deny") {
-      prov = '<div class="prov"><span>권한 <span class="no">' + esc(res.need || "") + ' ✗</span></span>' +
-        "<span>감사 <b>PERMISSION_DENIED</b></span><span class=\"badge d\">거부 · 감사됨</span></div>";
-    } else if (kind === "crit") {
-      prov = '<div class="prov"><span>등급 <b>CRITICAL</b></span><span>감사 <b>CRITICAL_TOOL_BLOCKED</b></span>' +
-        '<span class="badge d">차단됨</span></div>';
-    } else {
-      prov = '<div class="prov"><span>도구 <b>' + esc(res.tool) + "</b></span>" +
-        "<span>권한 <span class=\"ok\">" + esc(res.perm) + " ✓</span></span>" +
-        "<span>출처 <b>PostgreSQL</b></span><span>감사 <b>" + esc(res.audit || "—") + "</b></span>" +
-        '<span class="badge ' + (kind === "note" ? "r" : "v") + '">' + (kind === "note" ? res.risk : "DB가 계산함") + "</span></div>";
-    }
-    m.innerHTML = head + '<div class="a">' + res.html + "</div>" + prov;
-    if (outEl.firstChild && outEl.firstChild.className === "empty") outEl.innerHTML = "";
-    outEl.insertBefore(m, outEl.firstChild);
+    if (kind === "deny") prov = '<div class="prov"><span>' + t(lang, "prov_perm") + ' <span class="no">' + esc(res.need) + ' ✗</span></span><span>' + t(lang, "prov_audit") + ' <b>PERMISSION_DENIED</b></span><span class="badge d">' + t(lang, "badge_denied") + "</span></div>";
+    else if (kind === "crit") prov = '<div class="prov"><span>CRITICAL</span><span>' + t(lang, "prov_audit") + ' <b>CRITICAL_TOOL_BLOCKED</b></span><span class="badge d">' + t(lang, "badge_blocked") + "</span></div>";
+    else prov = '<div class="prov"><span>' + t(lang, "prov_tool") + " <b>" + esc(res.tool) + "</b></span><span>" + t(lang, "prov_perm") + ' <span class="ok">' + esc(res.perm) + ' ✓</span></span><span>' + t(lang, "prov_source") + " <b>PostgreSQL</b></span><span>" + t(lang, "prov_audit") + " <b>" + esc(res.audit) + '</b></span><span class="badge v">' + t(lang, "badge_db") + "</span></div>";
+    m.innerHTML = qhead(q) + '<div class="a">' + body + "</div>" + prov;
+    prepend(m);
   }
+  function prepend(m) { if (outEl.firstChild && outEl.firstChild.className === "empty") outEl.innerHTML = ""; outEl.insertBefore(m, outEl.firstChild); }
 
-  /* approve/reject buttons (event delegation across the whole doc) */
+  /* approve/reject delegation */
   document.addEventListener("click", function (ev) {
-    var t = ev.target;
-    var idA = t.getAttribute && t.getAttribute("data-approve");
-    var idR = t.getAttribute && t.getAttribute("data-reject");
-    if (idA) { var r = OHMY.call(current, "approve", idA); renderMsg("승인 처리", r, r.ok ? "ok" : "deny"); afterAction(); }
-    if (idR) { var r2 = OHMY.call(current, "reject", idR); renderMsg("반려 처리", r2, r2.ok ? "ok" : "deny"); afterAction(); }
+    var idA = ev.target.getAttribute && ev.target.getAttribute("data-approve");
+    var idR = ev.target.getAttribute && ev.target.getAttribute("data-reject");
+    if (idA) { renderMsg(t(lang, "approve"), OHMY.call(current, "approve", idA)); after(); }
+    if (idR) { renderMsg(t(lang, "reject"), OHMY.call(current, "reject", idR)); after(); }
   });
-  function afterAction() { renderPerms(); renderApprovalsPanel(); renderFeed(); if (!views.audit.classList.contains("hidden")) renderAudit(); }
+  function after() { renderPerms(); renderApprovalsPanel(); renderFeed(); if (!views.audit.classList.contains("hidden")) renderAudit(); }
 
-  /* ---------- system panel: permissions ---------- */
+  /* panels */
   function renderPerms() {
-    var el = document.getElementById("perms"); var e = OHMY.EMP[current];
-    var list = OHMY.perms(current).map(function (p) {
-      var fin = p.indexOf("FINANCE") === 0;
-      return '<span class="perm' + (fin ? " fin" : "") + '">' + p + "</span>";
-    }).join("");
-    el.innerHTML = '<div class="dim sm" style="margin-bottom:7px">' + e.name + " · " + e.roleKo + " · " + e.team + "</div>" +
-      '<div class="permlist">' + list + "</div>";
+    var e = OHMY.emp(current);
+    document.getElementById("perms").innerHTML = '<div class="dim sm" style="margin-bottom:7px">' + e.name + " · " + I18N.role(lang, e.role) + "</div><div class=\"permlist\">" +
+      OHMY.perms(current).map(function (p) { return '<span class="perm' + (p.indexOf("FINANCE") === 0 ? " fin" : "") + '">' + p + "</span>"; }).join("") + "</div>";
   }
-
-  /* ---------- system panel: approvals for current persona ---------- */
   function renderApprovalsPanel() {
     var el = document.getElementById("appr");
+    if (!OHMY.can(current, "APPROVAL_APPROVE")) { el.innerHTML = '<span class="dim sm">' + t(lang, "no_perm_role") + "</span>"; return; }
     var mine = OHMY.approvals().filter(function (x) { return x.approverNo === current && x.status === "PENDING"; });
-    if (!OHMY.can(current, "APPROVAL_APPROVE")) { el.innerHTML = '<span class="dim sm">이 역할에는 결재 권한이 없습니다.</span>'; return; }
-    if (!mine.length) { el.innerHTML = '<span class="dim sm">대기 중인 결재가 없습니다.</span>'; return; }
+    if (!mine.length) { el.innerHTML = '<span class="dim sm">' + t(lang, "no_pending") + "</span>"; return; }
     el.innerHTML = mine.map(function (x) {
-      return '<div class="ev"><span class="who">' + OHMY.EMP[x.requesterNo].name + "</span><span class=\"m\">" + x.summary + "</span>" +
-        ' <button class="mini" data-approve="' + x.id + '">승인</button> <button class="mini ghost" data-reject="' + x.id + '">반려</button></div>';
+      return '<div class="ev"><span class="who">' + OHMY.emp(x.requesterNo).name + '</span><span class="m">' + x.date + "</span> " +
+        '<button class="mini" data-approve="' + x.id + '">' + t(lang, "approve") + '</button> <button class="mini ghost" data-reject="' + x.id + '">' + t(lang, "reject") + "</button></div>";
     }).join("");
   }
-
-  /* ---------- system panel: audit feed ---------- */
   function renderFeed() {
-    var el = document.getElementById("feed");
-    var rows = OHMY.audit().slice(0, 8).map(function (a) {
-      return '<div class="ev' + (a.success ? "" : " fail") + '"><span class="a aname">' + a.action + "</span>" +
-        '<span class="who">' + a.actor + "</span><span class=\"m\">" + hhmm(a.ts) + " · " + a.id + "</span></div>";
-    }).join("");
-    el.innerHTML = rows || '<span class="dim sm">아직 기록이 없습니다.</span>';
+    document.getElementById("feed").innerHTML = OHMY.audit().slice(0, 8).map(function (a) {
+      return '<div class="ev' + (a.success ? "" : " fail") + '"><span class="a aname">' + a.action + '</span><span class="who">' + a.actor + '</span><span class="m">' + hhmm(a.ts) + " · " + a.id + "</span></div>";
+    }).join("") || '<span class="dim sm">—</span>';
   }
-
-  /* ---------- audit view (full) ---------- */
   function renderAudit() {
-    var el = document.getElementById("audit-body");
-    el.innerHTML = OHMY.audit().map(function (a) {
-      return '<tr class="' + (a.success ? "" : "fail") + '"><td class="mono">' + a.id + "</td><td>" + hhmm(a.ts) +
-        '</td><td class="mono"><span class="aname">' + a.action + "</span></td><td>" + a.actor + "</td>" +
-        '<td class="mono dim">' + a.tool + "</td><td>" + (a.success ? '<span class="ok">✓</span>' : '<span class="no">✗</span>') + "</td></tr>";
+    document.getElementById("audit-body").innerHTML = OHMY.audit().map(function (a) {
+      return '<tr class="' + (a.success ? "" : "fail") + '"><td class="mono">' + a.id + "</td><td>" + hhmm(a.ts) + '</td><td class="mono"><span class="aname">' + a.action + "</span></td><td>" + a.actor + '</td><td class="mono dim">' + a.tool + "</td><td>" + (a.success ? '<span class="ok">✓</span>' : '<span class="no">✗</span>') + "</td></tr>";
     }).join("");
   }
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function hhmm(d) { function p(n) { return (n < 10 ? "0" : "") + n; } return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()); }
 
-  renderPerms(); renderApprovalsPanel(); renderFeed();
+  /* init */
+  applyI18n(); renderPersonas(); renderChips(); renderPerms(); renderApprovalsPanel(); renderFeed(); drawPipe(0, null);
+  outEl.innerHTML = '<div class="empty">' + t(lang, "empty") + "</div>";
 })();
