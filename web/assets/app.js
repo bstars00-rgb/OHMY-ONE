@@ -61,7 +61,7 @@
       b.addEventListener("click", function () {
         current = no;
         [].forEach.call(pc.children, function (c, i) { c.setAttribute("aria-pressed", OHMY.PERSONAS[i] === no ? "true" : "false"); });
-        renderPerms(); renderApprovalsPanel();
+        renderChips(); renderPerms(); renderApprovalsPanel();
       });
       pc.appendChild(b);
     });
@@ -71,7 +71,7 @@
   var chipsEl = document.getElementById("chips");
   function renderChips() {
     chipsEl.innerHTML = "";
-    I18N.CHIPS.forEach(function (c) {
+    I18N.personaChips(OHMY.emp(current).role).forEach(function (c) {
       var b = document.createElement("button");
       b.className = "chip"; b.innerHTML = '<span class="tag">' + c.cat + "</span>" + I18N.chipLabel(lang, c.intent);
       b.addEventListener("click", function () { runIntent(c.intent, c.args, b); });

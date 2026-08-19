@@ -269,24 +269,49 @@ const I18N = (function () {
     ins_leaveUsage: { ko: "전사 소진율 {rate}%. 낮은 부서는 미사용 연차 충당부채가 누적될 수 있습니다.", en: "Company usage {rate}%. Low-usage teams risk accruing unused-leave liability.", vi: "Tỷ lệ {rate}%. Phòng ban dùng ít tích lũy nợ phép.", zh: "全公司使用率{rate}%。使用率低者积累未休假负债。", ja: "全社取得率{rate}%。低取得部門は未消化負債が蓄積。" },
   };
 
-  // chip catalog: intent-driven so clicking always works regardless of language
-  const CHIPS = [
-    { cat: "FINANCE", intent: "settlement", args: { seller: "Agoda" } },
-    { cat: "FINANCE", intent: "arAging" },
-    { cat: "FINANCE", intent: "currencyExposure" },
-    { cat: "FINANCE", intent: "revenueByEntity" },
-    { cat: "OPS", intent: "bookingDashboard" },
-    { cat: "OPS", intent: "cancellation" },
-    { cat: "OPS", intent: "bookingsByCountry" },
-    { cat: "SALES", intent: "sellerRanking" },
-    { cat: "SALES", intent: "newSellers" },
-    { cat: "SALES", intent: "concentration" },
-    { cat: "SUPPLY", intent: "contractMix" },
-    { cat: "EXEC", intent: "execSummary" },
-    { cat: "HR", intent: "leaveUsage", args: { entity: "OMH_VN", year: 2025 } },
-    { cat: "HR", intent: "headcount" },
-    { cat: "HR", intent: "createLeave" },
-  ];
+  // Per-persona curated question sets — each role only sees what it actually asks.
+  // (Cross-team questions still work by typing them, and get denied if unauthorized.)
+  const PERSONA_CHIPS = {
+    STAFF: [
+      { cat: "HR", intent: "leaveBalance" },
+      { cat: "HR", intent: "createLeave" },
+    ],
+    OPS: [
+      { cat: "OPS", intent: "bookingDashboard" },
+      { cat: "OPS", intent: "cancellation" },
+      { cat: "OPS", intent: "bookingsByCountry" },
+      { cat: "HR", intent: "createLeave" },
+    ],
+    SALES: [
+      { cat: "SALES", intent: "sellerRanking" },
+      { cat: "SALES", intent: "newSellers" },
+      { cat: "SALES", intent: "concentration" },
+      { cat: "OPS", intent: "cancellation" },
+    ],
+    SUPPLY: [
+      { cat: "SUPPLY", intent: "contractMix" },
+      { cat: "OPS", intent: "bookingsByCountry" },
+      { cat: "HR", intent: "createLeave" },
+    ],
+    FINANCE: [
+      { cat: "FINANCE", intent: "settlement", args: { seller: "Agoda" } },
+      { cat: "FINANCE", intent: "arAging" },
+      { cat: "FINANCE", intent: "currencyExposure" },
+      { cat: "FINANCE", intent: "revenueByEntity" },
+    ],
+    HR: [
+      { cat: "HR", intent: "leaveUsage", args: { entity: "OMH_VN", year: 2025 } },
+      { cat: "HR", intent: "headcount" },
+      { cat: "APPROVAL", intent: "pending" },
+      { cat: "HR", intent: "createLeave" },
+    ],
+    CEO: [
+      { cat: "EXEC", intent: "execSummary" },
+      { cat: "FINANCE", intent: "revenueByEntity" },
+      { cat: "SALES", intent: "concentration" },
+      { cat: "FINANCE", intent: "arAging" },
+    ],
+  };
   const CHIP_LABEL = {
     settlement: { ko: "Agoda 정산·미수 현황 보여줘.", en: "Show Agoda's settlement & receivables.", vi: "Quyết toán & phải thu của Agoda.", zh: "查看Agoda结算与应收。", ja: "Agodaの決済・未収を表示。" },
     arAging: { ko: "셀러 미수금 연령분석·연체 셀러는?", en: "AR aging — who's overdue?", vi: "Tuổi nợ phải thu — ai quá hạn?", zh: "应收账龄——谁逾期？", ja: "売掛エイジング・延滞セラーは？" },
@@ -303,6 +328,8 @@ const I18N = (function () {
     leaveUsage: { ko: "2025년 베트남 직원 연차 사용 분석표.", en: "2025 Vietnam staff leave usage analysis.", vi: "Phân tích phép nhân viên VN 2025.", zh: "2025越南员工年假使用分析。", ja: "2025 ベトナム社員 有給分析。" },
     headcount: { ko: "법인별 인원 현황.", en: "Headcount by entity.", vi: "Nhân sự theo pháp nhân.", zh: "各法人人数。", ja: "法人別 人員。" },
     createLeave: { ko: "내일 연차 쓸게.", en: "I'll take leave tomorrow.", vi: "Ngày mai tôi nghỉ phép.", zh: "我明天请假。", ja: "明日 有給を取ります。" },
+    leaveBalance: { ko: "내 연차 얼마나 남았어?", en: "How much leave do I have left?", vi: "Tôi còn bao nhiêu phép?", zh: "我还剩多少年假？", ja: "有給はあとどれくらい？" },
+    pending: { ko: "내가 승인해야 할 것 보여줘.", en: "Show what I need to approve.", vi: "Mục cần tôi duyệt?", zh: "需要我审批的？", ja: "承認すべきものは？" },
   };
 
   function t(lang, key, params) {
@@ -311,7 +338,8 @@ const I18N = (function () {
     return s;
   }
   return {
-    LANGS: LANGS, CHIPS: CHIPS,
+    LANGS: LANGS,
+    personaChips: function (role) { return PERSONA_CHIPS[role] || []; },
     t: t,
     dept: function (lang, k) { return (DEPT[k] && (DEPT[k][lang] || DEPT[k].en)) || k; },
     ent: function (lang, c) { return (ENT[c] && (ENT[c][lang] || ENT[c].en)) || c; },
