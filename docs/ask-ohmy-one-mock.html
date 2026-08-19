@@ -1,0 +1,363 @@
+<title>Ask OHMY ONE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /* ---------- Tokens: light is the base :root ---------- */
+  :root{
+    --bg:#eff2f7; --surface:#ffffff; --surface-2:#f3f5fa; --raise:#ffffff;
+    --border:#dde2ec; --border-strong:#c9d1df;
+    --text:#141b28; --text-dim:#586278; --text-faint:#8a94a8;
+    --accent:#0e9f92; --accent-2:#0b7d73; --accent-wash:#daf1ee;
+    --deny:#d63a63; --deny-wash:#fbe2e9;
+    --warn:#b9791f; --warn-wash:#f7ecd6;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    --shadow:0 1px 2px rgba(20,27,40,.06),0 8px 24px rgba(20,27,40,.06);
+    --ring:0 0 0 3px rgba(14,159,146,.28);
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#070a11; --surface:#101725; --surface-2:#0c121d; --raise:#141d2d;
+      --border:#212c3e; --border-strong:#2c3a52;
+      --text:#eaf0f8; --text-dim:#95a2b8; --text-faint:#6b7789;
+      --accent:#2fd6c3; --accent-2:#5fe6d6; --accent-wash:#0c2b29;
+      --deny:#ff6d8a; --deny-wash:#2c1420;
+      --warn:#e6b452; --warn-wash:#2a2213;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.45);
+      --ring:0 0 0 3px rgba(47,214,195,.32);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#070a11; --surface:#101725; --surface-2:#0c121d; --raise:#141d2d;
+    --border:#212c3e; --border-strong:#2c3a52;
+    --text:#eaf0f8; --text-dim:#95a2b8; --text-faint:#6b7789;
+    --accent:#2fd6c3; --accent-2:#5fe6d6; --accent-wash:#0c2b29;
+    --deny:#ff6d8a; --deny-wash:#2c1420;
+    --warn:#e6b452; --warn-wash:#2a2213;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.45);
+    --ring:0 0 0 3px rgba(47,214,195,.32);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+    padding:clamp(16px,4vw,44px);
+  }
+  .wrap{max-width:940px; margin:0 auto}
+
+  /* ---------- Header ---------- */
+  header{display:flex; align-items:flex-start; justify-content:space-between; gap:16px}
+  .brand{display:flex; align-items:center; gap:11px}
+  .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+    background:var(--accent); color:#04201d; font-weight:800; flex:none}
+  .mark::after{content:"◎"; font-size:18px; line-height:1}
+  .brand h1{font-size:19px; letter-spacing:.14em; margin:0; font-weight:800}
+  .brand .sub{font-size:11px; letter-spacing:.28em; color:var(--text-faint); text-transform:uppercase; margin-top:2px}
+  .theme-btn{border:1px solid var(--border-strong); background:var(--surface); color:var(--text-dim);
+    border-radius:9px; padding:7px 11px; cursor:pointer; font-size:13px; font-family:inherit}
+  .theme-btn:hover{border-color:var(--accent); color:var(--accent)}
+  .theme-btn:focus-visible{outline:none; box-shadow:var(--ring)}
+
+  .hero{margin:26px 0 6px}
+  .hero h2{font-size:clamp(30px,6vw,46px); line-height:1.02; margin:0; font-weight:800;
+    letter-spacing:-.02em; text-wrap:balance}
+  .hero h2 .amp{color:var(--accent)}
+  .hero p{color:var(--text-dim); max-width:60ch; margin:12px 0 0; font-size:15px}
+
+  /* ---------- Persona bar ---------- */
+  .personas{display:flex; flex-wrap:wrap; gap:8px; margin:24px 0 6px}
+  .persona{display:flex; flex-direction:column; gap:2px; text-align:left;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+    border-radius:12px; padding:9px 13px; cursor:pointer; font-family:inherit; min-width:118px}
+  .persona:hover{border-color:var(--border-strong)}
+  .persona[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-wash)}
+  .persona .pn{font-weight:700; font-size:14px}
+  .persona .pr{font-size:11px; color:var(--text-dim); font-family:var(--mono)}
+  .persona[aria-pressed="true"] .pr{color:var(--accent-2)}
+  .persona:focus-visible{outline:none; box-shadow:var(--ring)}
+
+  /* ---------- Console card ---------- */
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    box-shadow:var(--shadow); padding:16px; margin-top:16px}
+  .askbar{display:flex; align-items:center; gap:11px; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:13px; padding:13px 15px}
+  .askbar .dot{color:var(--accent); font-size:15px}
+  .askbar input{flex:1; background:transparent; border:0; outline:none; color:var(--text);
+    font-family:inherit; font-size:15px}
+  .askbar input::placeholder{color:var(--text-faint)}
+  .askbar kbd{border:1px solid var(--border-strong); border-radius:6px; padding:2px 7px;
+    font-size:11px; color:var(--text-dim); font-family:var(--mono)}
+  .askhint{font-size:11.5px; color:var(--text-faint); padding:8px 4px 2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{border:1px solid var(--border); background:var(--raise); color:var(--text);
+    border-radius:999px; padding:8px 14px; cursor:pointer; font-family:inherit; font-size:13.5px;
+    display:flex; align-items:center; gap:8px; transition:border-color .15s,color .15s}
+  .chip .tag{font-size:10px; letter-spacing:.06em; color:var(--text-faint); font-family:var(--mono); text-transform:uppercase}
+  .chip:hover{border-color:var(--accent); color:var(--accent)}
+  .chip:hover .tag{color:var(--accent)}
+  .chip:focus-visible{outline:none; box-shadow:var(--ring)}
+  .chip[disabled]{opacity:.55; cursor:progress}
+
+  /* ---------- Pipeline ---------- */
+  .pipe{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:18px 2px 4px}
+  .node{display:flex; align-items:center; gap:7px; border:1px solid var(--border);
+    border-radius:9px; padding:6px 10px; font-size:11.5px; color:var(--text-dim);
+    background:var(--surface-2); font-family:var(--mono); transition:.25s}
+  .node .i{width:7px;height:7px;border-radius:50%;background:var(--border-strong); transition:.25s}
+  .node.on{color:var(--text); border-color:var(--accent); background:var(--accent-wash)}
+  .node.on .i{background:var(--accent); box-shadow:0 0 0 4px var(--accent-wash)}
+  .node.rej{color:var(--deny); border-color:var(--deny); background:var(--deny-wash)}
+  .node.rej .i{background:var(--deny)}
+  .arrow{color:var(--text-faint); font-size:12px}
+
+  /* ---------- Answer ---------- */
+  .out{margin-top:16px; display:flex; flex-direction:column; gap:12px}
+  .empty{color:var(--text-faint); font-size:14px; text-align:center; padding:26px 0;
+    border:1px dashed var(--border); border-radius:14px}
+  .msg{border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--raise)}
+  .msg .q{padding:11px 15px; font-size:13.5px; color:var(--text-dim); border-bottom:1px solid var(--border);
+    background:var(--surface-2)}
+  .msg .q b{color:var(--text); font-weight:600}
+  .msg .a{padding:15px}
+  .msg .a p{margin:0 0 8px}
+  .msg .a p:last-child{margin:0}
+  .fig{font-family:var(--mono); font-weight:700; color:var(--accent-2)}
+  .interp{border-left:3px solid var(--accent); padding-left:11px; color:var(--text-dim); font-size:13.5px; margin-top:6px}
+  .stmt{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:13px; margin-top:4px}
+  .stmt td{padding:5px 4px; border-bottom:1px solid var(--border)}
+  .stmt td.n{text-align:right; font-variant-numeric:tabular-nums}
+  .stmt tr.tot td{font-weight:800; color:var(--text); border-bottom:none}
+  .stmt tr.sub td{color:var(--text-dim)}
+
+  .prov{display:flex; flex-wrap:wrap; gap:6px 14px; padding:11px 15px; border-top:1px dashed var(--border);
+    background:var(--surface-2); font-family:var(--mono); font-size:11.5px}
+  .prov span{color:var(--text-dim)} .prov b{color:var(--text)}
+  .ok{color:var(--accent-2)} .no{color:var(--deny)}
+  .msg.deny{border-color:var(--deny)}
+  .msg.deny .q{background:var(--deny-wash)}
+  .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11px;
+    font-family:var(--mono); border:1px solid}
+  .badge.v{color:var(--accent-2);border-color:var(--accent);background:var(--accent-wash)}
+  .badge.d{color:var(--deny);border-color:var(--deny);background:var(--deny-wash)}
+
+  footer{margin-top:22px; color:var(--text-faint); font-size:12px; line-height:1.6}
+  footer code{font-family:var(--mono); color:var(--text-dim)}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <h1>OHMY ONE</h1>
+        <div class="sub">Enterprise OS</div>
+      </div>
+    </div>
+    <button class="theme-btn" id="theme" aria-label="테마 전환">◐ 테마</button>
+  </header>
+
+  <div class="hero">
+    <h2>메뉴는 없습니다. <span class="amp">그냥 물어보세요.</span></h2>
+    <p>HR·재무·결재를 대화로 처리합니다. 모든 숫자는 <b>데이터베이스가 계산</b>하며,
+       Claude는 해석할 뿐 지어내지 않습니다. 아래에서 역할을 바꿔가며 직접 눌러보세요.</p>
+  </div>
+
+  <!-- Persona switcher -->
+  <div class="personas" id="personas" role="group" aria-label="역할 선택"></div>
+
+  <!-- Console -->
+  <div class="card">
+    <div class="askbar">
+      <span class="dot" aria-hidden="true">◍</span>
+      <input id="ask" placeholder="Ask OHMY ONE…  (예: 내 연차 얼마나 남았어?)" aria-label="질문 입력" />
+      <kbd>↵</kbd>
+    </div>
+    <div class="askhint">아래 예시를 누르면 요청이 파이프라인을 통과하는 과정을 재현합니다.</div>
+    <div class="chips" id="chips"></div>
+
+    <!-- Pipeline -->
+    <div class="pipe" id="pipe" aria-hidden="true"></div>
+
+    <!-- Output -->
+    <div class="out" id="out">
+      <div class="empty">역할을 고르고 예시 질문을 눌러보세요. 응답에는 출처(호출 함수·권한·감사 기록)가 함께 표시됩니다.</div>
+    </div>
+  </div>
+
+  <footer>
+    표시된 수치는 시연용 대표 샘플이며 실제 시드 데이터의 형태를 반영합니다.
+    실제 시스템에서는 이 화면의 요청이 <code>OHMY ONE MCP</code> → 권한 엔진 → SQL 함수 → 감사 로그를 거칩니다.
+    원시 SQL 도구는 존재하지 않습니다. · <b>No Menu. Just Ask.</b>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement;
+  document.getElementById("theme").addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme");
+    var dark=cur? cur==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+    root.setAttribute("data-theme", dark?"light":"dark");
+  });
+
+  // Personas and their permission codes
+  var PERSONAS={
+    employee:{name:"Lucy Park", role:"사원 · EMPLOYEE", perms:["SELF"]},
+    leader:{name:"David Kim", role:"팀장 · TEAM_LEADER", perms:["SELF","HR_LEAVE_READ_TEAM","APPROVAL_APPROVE"]},
+    finance:{name:"Fiona Lee", role:"재무 · FINANCE", perms:["SELF","FINANCE_REVENUE_READ","FINANCE_PNL_READ"]},
+    ceo:{name:"Grace Choi", role:"CEO", perms:["SELF","FINANCE_REVENUE_READ","FINANCE_PNL_READ","HR_LEAVE_READ_ALL","APPROVAL_READ"]}
+  };
+  var order=["employee","leader","finance","ceo"];
+  var current="employee";
+
+  var STAGES=[["user","USER"],["claude","CLAUDE"],["mcp","MCP"],["perm","권한엔진"],["sql","SQL"],["audit","감사"]];
+
+  var fig=function(t){return '<span class="fig">'+t+'</span>';};
+
+  // Prompt catalog. outcome(personaKey) -> {ok, tool, rpc, perm, audit, html}
+  var PROMPTS=[
+    {q:"내 연차 얼마나 남았어?", tag:"HR", fn:function(){
+      return {ok:true, tool:"ohmy_hr_get_leave_balance", rpc:"get_leave_balance()", perm:"HR_LEAVE_READ_SELF", audit:"LEAVE_BALANCE_VIEWED",
+        html:"<p>연차(ANNUAL) 잔여 "+fig("13.0일")+" 입니다. (부여 "+fig("15")+" + 이월 "+fig("2")+" − 사용 "+fig("3")+" − 대기 "+fig("1")+")</p>"+
+             "<p>병가(SICK) 잔여 "+fig("10.0일")+".</p>"};
+    }},
+    {q:"내일 연차 쓸게.", tag:"HR · 쓰기", fn:function(k){
+      var appr = k==="employee" ? "David Kim(팀장)" : "상급자";
+      return {ok:true, tool:"ohmy_hr_create_leave_request", rpc:"create_leave_request()", perm:"HR_LEAVE_CREATE_SELF", audit:"LEAVE_REQUEST_CREATED",
+        html:"<p>2026-08-20 연차 "+fig("1일")+" 신청이 접수되었습니다.</p>"+
+             "<p>승인 경로: "+appr+" · 상태 <b>대기중(PENDING)</b>. 잔여에서 1일이 예약(pending)되었습니다.</p>"+
+             '<p style="font-size:12.5px;color:var(--text-dim)">멱등키가 함께 전송되어 재시도해도 중복 신청되지 않습니다.</p>'};
+    }},
+    {q:"이번달 매출 알려줘.", tag:"FINANCE", perm:"FINANCE_REVENUE_READ", fn:function(){
+      return {ok:true, tool:"ohmy_finance_get_revenue", rpc:"get_monthly_revenue()", perm:"FINANCE_REVENUE_READ", audit:"FINANCE_REPORT_VIEWED",
+        html:"<p>이번달(2026-08) 매출은 "+fig("$585,000")+" 입니다. <span style='color:var(--text-dim);font-size:12.5px'>(POSTED 원장 집계)</span></p>"};
+    }},
+    {q:"이번달 P&L 만들어줘.", tag:"FINANCE", perm:"FINANCE_PNL_READ", fn:function(){
+      var rows=[["매출","585,000"],["매출원가(COGS)","175,500"],["매출총이익","409,500","sub"],
+                ["판관비","320,000"],["영업이익","89,500","sub"],["기타수익","2,000"],["기타비용","1,000"],["당기순이익","90,500","tot"]];
+      var t='<table class="stmt">';
+      rows.forEach(function(r){ t+='<tr class="'+(r[2]||"")+'"><td>'+r[0]+'</td><td class="n">'+r[1]+'</td></tr>'; });
+      t+='</table>';
+      return {ok:true, tool:"ohmy_finance_generate_pnl", rpc:"generate_income_statement()", perm:"FINANCE_PNL_READ", audit:"FINANCE_REPORT_VIEWED",
+        html:"<p>2026-08 손익계산서 (단위 USD, 원장에서 계산):</p>"+t};
+    }},
+    {q:"내가 승인해야 할 것 보여줘.", tag:"APPROVAL", perm:"APPROVAL_APPROVE", special:"approvals", fn:function(k){
+      if(k==="leader") return {ok:true, tool:"ohmy_approval_get_pending", rpc:"get_my_pending_approvals()", perm:"APPROVAL_APPROVE", audit:"—",
+        html:"<p>승인 대기 "+fig("1건")+":</p><p>• Lucy Park · 연차 2026-08-20 ("+fig("1일")+") · <b>대기중</b></p>"+
+             '<p style="font-size:12.5px;color:var(--text-dim)">‘Lucy 연차 승인해줘’라고 하면, 승인자 신원을 서버에서 확인한 뒤 처리합니다.</p>'};
+      if(k==="ceo") return {ok:true, tool:"ohmy_approval_get_pending", rpc:"get_my_pending_approvals()", perm:"APPROVAL_READ", audit:"—",
+        html:"<p>현재 승인 대기 항목이 없습니다.</p>"};
+      return {ok:false};
+    }},
+    {q:"지난달보다 이익이 왜 줄었어?", tag:"EXEC", perm:"FINANCE_PNL_READ", fn:function(){
+      return {ok:true, tool:"ohmy_finance_compare_periods", rpc:"compare_financial_periods()", perm:"FINANCE_PNL_READ", audit:"FINANCE_REPORT_VIEWED",
+        html:"<p>순이익: 2026-07 "+fig("$108,000")+" → 2026-08 "+fig("$90,500")+" ("+fig("−$17,500")+").</p>"+
+             '<p class="interp"><b>Claude 해석:</b> 매출은 정체된 반면 Content 부문 인건비가 약 '+fig("+$15,000")+
+             ' 증가한 것이 감소의 주요 동인입니다. 위 숫자는 <b>DB가 계산</b>했고, 이 문장만 해석입니다.</p>'};
+    }}
+  ];
+
+  // Build persona buttons
+  var pc=document.getElementById("personas");
+  order.forEach(function(k){
+    var p=PERSONAS[k];
+    var b=document.createElement("button");
+    b.className="persona"; b.setAttribute("aria-pressed", k===current?"true":"false");
+    b.innerHTML='<span class="pn">'+p.name+'</span><span class="pr">'+p.role+'</span>';
+    b.addEventListener("click",function(){ current=k;
+      [].forEach.call(pc.children,function(c,i){ c.setAttribute("aria-pressed", order[i]===k?"true":"false"); });
+    });
+    pc.appendChild(b);
+  });
+
+  // Build chips
+  var chipsEl=document.getElementById("chips");
+  PROMPTS.forEach(function(p,idx){
+    var c=document.createElement("button");
+    c.className="chip"; c.innerHTML='<span class="tag">'+p.tag+'</span>'+p.q;
+    c.addEventListener("click",function(){ run(idx,c); });
+    chipsEl.appendChild(c);
+  });
+
+  // Pipeline nodes
+  var pipeEl=document.getElementById("pipe");
+  function drawPipe(activeCount, rejectAt){
+    pipeEl.innerHTML="";
+    STAGES.forEach(function(s,i){
+      var n=document.createElement("span"); n.className="node";
+      if(rejectAt!=null && i===rejectAt) n.className+=" rej";
+      else if(i<activeCount) n.className+=" on";
+      n.innerHTML='<span class="i"></span>'+s[1];
+      pipeEl.appendChild(n);
+      if(i<STAGES.length-1){ var a=document.createElement("span"); a.className="arrow"; a.textContent="›"; pipeEl.appendChild(a); }
+    });
+  }
+  drawPipe(0,null);
+
+  var reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  var busy=false;
+
+  function run(idx, chip){
+    if(busy) return; busy=true;
+    var p=PROMPTS[idx], k=current, persona=PERSONAS[k];
+    var res=p.fn(k);
+    var allowed = res.ok!==false && (!p.perm || persona.perms.indexOf(p.perm)>=0);
+    // approvals special: employee/finance denied, handled by res.ok already
+    chip.setAttribute("disabled","");
+    var step=0;
+    var rejectStage = 3; // permission engine
+    function tick(){
+      if(allowed){
+        step++; drawPipe(step,null);
+        if(step<STAGES.length){ schedule(tick); }
+        else finish();
+      } else {
+        if(step<=rejectStage){ step++; if(step<rejectStage){ drawPipe(step,null); schedule(tick); }
+          else { drawPipe(rejectStage,rejectStage); schedule(function(){ drawPipe(5,rejectStage); finish(); }); } }
+      }
+    }
+    function schedule(f){ if(reduce) f(); else setTimeout(f,150); }
+    tick();
+
+    function finish(){
+      render(p, k, res, allowed);
+      chip.removeAttribute("disabled"); busy=false;
+    }
+  }
+
+  var outEl=document.getElementById("out");
+  function render(p, k, res, allowed){
+    var persona=PERSONAS[k];
+    var m=document.createElement("div"); m.className="msg"+(allowed?"":" deny");
+    var head='<div class="q"><b>'+persona.name+'</b> · '+persona.role.split(" · ")[0]+' &nbsp;—&nbsp; “'+p.q+'”</div>';
+    var body, prov;
+    if(allowed){
+      body='<div class="a">'+res.html+'</div>';
+      prov='<div class="prov">'+
+        '<span>도구 <b>'+res.tool+'</b></span>'+
+        '<span>함수 <b>'+res.rpc+'</b></span>'+
+        '<span>권한 <span class="ok">'+res.perm+' ✓</span></span>'+
+        '<span>출처 <b>PostgreSQL</b></span>'+
+        '<span>감사 <b>'+res.audit+'</b></span>'+
+        '<span class="badge v">DB가 계산함</span></div>';
+    } else {
+      var need=p.perm||"APPROVAL_APPROVE";
+      body='<div class="a"><p><b>권한이 없어 거부되었습니다.</b> 이 역할('+persona.role.split(" · ")[0]+
+        ')에는 <span class="no" style="font-family:var(--mono)">'+need+'</span> 권한이 없습니다.</p>'+
+        '<p style="color:var(--text-dim);font-size:13px">숫자를 지어내지 않습니다 — 요청은 권한 엔진에서 차단되고 기록됩니다.</p></div>';
+      prov='<div class="prov">'+
+        '<span>권한 <span class="no">'+need+' ✗</span></span>'+
+        '<span>감사 <b>PERMISSION_DENIED</b></span>'+
+        '<span class="badge d">거부 · 감사됨</span></div>';
+    }
+    m.innerHTML=head+body+prov;
+    if(outEl.firstChild && outEl.firstChild.className==="empty") outEl.innerHTML="";
+    outEl.insertBefore(m, outEl.firstChild);
+  }
+})();
+</script>

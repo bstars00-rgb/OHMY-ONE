@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OHMY ONE — No Menu. Just Ask.</title>
+  <meta name="description" content="AI-native enterprise operating system prototype. Ask, and the database answers." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◎</text></svg>" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div><h1>OHMY ONE</h1><div class="sub">Enterprise OS · Prototype</div></div>
+      </div>
+      <div class="top-actions">
+        <button class="theme-btn" id="theme" aria-label="테마 전환">◐ 테마</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-view="chat">대화</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="audit">감사 로그</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="arch">아키텍처</button>
+    </div>
+
+    <!-- ============ CHAT VIEW ============ -->
+    <section id="view-chat">
+      <div style="margin:6px 0 2px">
+        <h2 style="font-size:clamp(24px,4.5vw,36px);margin:0;font-weight:800;letter-spacing:-.02em">
+          메뉴는 없습니다. <span style="color:var(--accent)">그냥 물어보세요.</span></h2>
+        <p class="dim" style="max-width:60ch;margin:8px 0 0">역할을 바꿔가며 질문해 보세요. 모든 숫자는 데이터베이스가 계산하고,
+          응답에는 호출 함수·권한·감사 기록이 함께 표시됩니다. (실제 DB 없이 브라우저에서 동일 로직을 시뮬레이션)</p>
+      </div>
+
+      <div class="personas" id="personas" role="group" aria-label="역할 선택"></div>
+
+      <div class="stage">
+        <div class="card">
+          <div class="askbar">
+            <span class="dot" aria-hidden="true">◍</span>
+            <input id="ask" placeholder="Ask OHMY ONE…  (예: 내 연차 얼마나 남았어?)" aria-label="질문 입력" />
+            <button id="send">보내기</button>
+          </div>
+          <div class="chips" id="chips"></div>
+          <div class="pipe" id="pipe" aria-hidden="true"></div>
+          <div class="out" id="out">
+            <div class="empty">역할을 고르고 질문을 눌러보세요. 요청이 권한 엔진·SQL·감사 파이프라인을 통과합니다.</div>
+          </div>
+        </div>
+
+        <aside class="stage-side" style="display:flex;flex-direction:column;gap:16px">
+          <div class="panel"><h3>현재 역할 권한</h3><div id="perms"></div></div>
+          <div class="panel"><h3>내 결재함</h3><div id="appr"></div></div>
+          <div class="panel"><h3>실시간 감사 피드</h3><div class="feed" id="feed"></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ AUDIT VIEW ============ -->
+    <section id="view-audit" class="hidden">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--text-faint);font-size:12px;letter-spacing:.1em;text-transform:uppercase">감사 로그 · 추가 전용(append-only)</h3>
+        <p class="dim sm">민감 작업은 성공·실패 모두 기록됩니다. 실제 시스템에서는 트리거가 UPDATE/DELETE를 차단합니다.</p>
+        <div style="overflow-x:auto">
+          <table class="audit-table">
+            <thead><tr><th>ID</th><th>시각</th><th>액션</th><th>행위자</th><th>도구</th><th>결과</th></tr></thead>
+            <tbody id="audit-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARCHITECTURE VIEW ============ -->
+    <section id="view-arch" class="hidden">
+      <div class="arch">
+        <div class="card">
+          <h3 style="margin-top:0;color:var(--text-faint);font-size:12px;letter-spacing:.1em;text-transform:uppercase">요청 경로</h3>
+          <div class="flowrow">
+            <span class="node on"><span class="i"></span>USER</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>CLAUDE</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>OHMY ONE MCP</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>권한 엔진</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>비즈니스 로직(SQL)</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>PostgreSQL + RLS</span><span class="arrow">›</span>
+            <span class="node on"><span class="i"></span>감사 로그</span>
+          </div>
+          <p class="dim sm" style="text-align:center">Claude는 진실의 원천이 아닙니다. 데이터베이스가 진실의 원천입니다.</p>
+        </div>
+        <div class="grid3">
+          <div class="pcard"><h4>결정론</h4><p>연차·급여·매출·손익·결재 상태는 모두 SQL 함수가 계산합니다. LLM은 해석할 뿐 지어내지 않습니다.</p></div>
+          <div class="pcard"><h4>서버 측 신원</h4><p>행위자·승인자는 세션에서 확정됩니다. LLM이 넘긴 ID는 재인가가 필요한 조회 키일 뿐입니다.</p></div>
+          <div class="pcard"><h4>다층 방어</h4><p>권한 엔진이 각 요청을 막고, RLS가 소유권·범위를 다시 검사합니다. 도구 계층을 우회해도 실패합니다.</p></div>
+          <div class="pcard"><h4>업무 액션 전용 MCP</h4><p>원시 SQL 도구는 존재하지 않습니다. 이름 있는 업무 액션 22개와 리스크 등급(READ/쓰기/결재/CRITICAL-차단)만 노출합니다.</p></div>
+          <div class="pcard"><h4>멱등성 · 트랜잭션</h4><p>쓰기에는 멱등키가 붙어 재시도해도 중복되지 않고, 다단계 작업은 하나의 트랜잭션으로 처리됩니다.</p></div>
+          <div class="pcard"><h4>불변 감사</h4><p>모든 민감 작업이 추가 전용 로그에 남습니다. 거부(PERMISSION_DENIED)도 증거로 남습니다.</p></div>
+        </div>
+        <div class="card">
+          <p class="dim sm" style="margin:0">모듈: HR · Finance · Approval &nbsp;·&nbsp; 조직: OHMYHOTEL(Korea/Vietnam/Singapore) &nbsp;·&nbsp; 30명 · 8부서 · 12개월 원장(대사 검증)</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      표시된 수치는 시연용 대표 샘플이며, 브라우저 안에서 백엔드 로직(권한 엔진·결정론적 계산·감사)을 그대로 재현합니다.
+      실제 배포 시 이 요청은 <code>Claude → OHMY ONE MCP → 권한 엔진 → SQL 함수 → PostgreSQL(RLS) → 감사</code> 경로를 거칩니다.
+      원시 SQL 도구는 없습니다. · <b>No Menu. Just Ask.</b>
+    </footer>
+  </div>
+
+  <script src="assets/engine.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
