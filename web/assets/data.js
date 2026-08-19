@@ -1,194 +1,217 @@
 /* ============================================================
- * OHMY ONE demo — mock dataset (NO database).
- * Deterministic (seeded) so figures are stable across reloads.
- * 3 legal entities, ~70 employees, 3 fiscal years of finance,
- * balance sheets, and per-employee leave usage. Representative sample data.
+ * OHMY ONE demo — dataset modeled on the real ELLIS business:
+ * a B2B hotel bedbank distributing inventory to OTA/agency SELLERS
+ * across 4 legal entities. Figures are SYNTHETIC but in realistic
+ * ranges (deterministic seed). No production data is embedded.
  * ============================================================ */
 const OHMY_DATA = (function () {
   "use strict";
-  // simple deterministic PRNG (LCG)
-  function makeRng(seed) { let s = seed >>> 0; return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
-  const rnd = makeRng(20260819);
-  const pick = (arr, r) => arr[Math.floor(r * arr.length)];
-  const between = (a, b, r) => a + Math.round((b - a) * r);
+  function rng(seed) { let s = seed >>> 0; return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+  const R = rng(20260819);
+  const bt = function (a, b) { return a + Math.round((b - a) * R()); };
+  const btf = function (a, b) { return a + (b - a) * R(); };
 
-  const YEARS = [2024, 2025, 2026];
+  // ---- entities (owner companies) ----
   const ENTITIES = [
-    { code: "OMH_KR", key: "kr", scale: 1.0, growth: 0.08 },
-    { code: "OMH_VN", key: "vn", scale: 0.55, growth: 0.16 },
-    { code: "OMH_SG", key: "sg", scale: 0.40, growth: 0.10 },
+    { code: "OMH_KR", owner: 110000 }, { code: "OMH_JP", owner: 120000 },
+    { code: "OMH_VN", owner: 130000 }, { code: "OMH_SG", owner: 160000 },
   ];
-  const DEPTS = ["OP", "CONTENT", "GSM", "SCM", "FIN", "HR", "IT"];
+  const CCYS = ["KRW", "JPY", "USD", "CNY", "VND"];
+  // rough USD per 1 unit of currency (for USD-equivalent aggregation)
+  const FX_USD = { KRW: 1 / 1390, JPY: 1 / 150, USD: 1, CNY: 1 / 7.2, VND: 1 / 25000 };
 
-  // name pools per entity (romanized; illustrative)
-  const NAMES = {
-    kr: ["Grace Choi", "Henry Lim", "Ian Seo", "David Kim", "Lucy Park", "Mina Jung", "Noah Han",
-      "Olivia Yoon", "Peter Kang", "Quinn Ryu", "Rachel Baek", "Sam Oh", "Tina Moon", "Uma Shin",
-      "Victor Ko", "Wendy Nam", "Yuna Jang", "Zack Bae", "Amy Cho", "Ben Suh", "Cora Min", "Dan Woo",
-      "Fiona Lee", "Gary Im", "Helen Ahn", "Hana Seo", "Ivy Ha", "Jake Yang", "Kelly Do", "Leo Seok"],
-    vn: ["Nguyen An", "Tran Binh", "Le Chi", "Pham Dung", "Hoang Em", "Vu Giang", "Dang Ha", "Bui Hai",
-      "Do Khanh", "Ngo Lan", "Duong Minh", "Ly Nam", "Ho Oanh", "Cao Phuc", "Mai Quyen", "Trinh Son",
-      "Vo Thao", "Dinh Uyen", "Ta Viet", "Chu Xuan", "Luu Yen", "Phan Anh", "Ha Bao", "Ton Cuong", "Kieu Diep"],
-    sg: ["Wei Tan", "Jun Lim", "Mei Ng", "Kai Wong", "Xin Goh", "Ravi Kumar", "Siti Rahman", "Aiden Lee",
-      "Chloe Teo", "Ethan Sim", "Farah Ali", "Grace Ong", "Hafiz Yusof", "Iris Chua", "Jared Koh"],
+  // ---- sellers/channels (public brand names; synthetic metrics) ----
+  // tier drives volume; each seller belongs to one owner entity + billing currency
+  const SELLER_DEFS = [
+    ["Agoda", "OMH_KR", "USD", "2022-01-01", "mega"],
+    ["Trip.com", "OMH_KR", "USD", "2022-01-01", "mega"],
+    ["DidaTravel", "OMH_SG", "USD", "2022-01-01", "mega"],
+    ["Traveloka", "OMH_SG", "USD", "2022-01-01", "large"],
+    ["Klook", "OMH_SG", "USD", "2025-09-12", "large"],
+    ["Rakuten Travel Xchange", "OMH_JP", "JPY", "2025-09-08", "large"],
+    ["Webbeds", "OMH_KR", "USD", "2024-08-12", "large"],
+    ["Hana Tour Business", "OMH_KR", "KRW", "2024-10-14", "mid"],
+    ["Myrealtrip", "OMH_KR", "KRW", "2024-03-15", "mid"],
+    ["allmytour", "OMH_KR", "KRW", "2022-01-01", "mid"],
+    ["Tripbtoz", "OMH_KR", "USD", "2024-11-22", "mid"],
+    ["Hotelpass", "OMH_KR", "KRW", "2024-05-07", "mid"],
+    ["Lion Travel", "OMH_KR", "USD", "2025-09-12", "mid"],
+    ["Qiyouji Travel", "OMH_SG", "USD", "2024-01-26", "small"],
+    ["HEYTRIP", "OMH_SG", "USD", "2023-10-19", "small"],
+    ["Gotadi", "OMH_VN", "VND", "2026-04-20", "small"],
+    ["Vietravel", "OMH_VN", "VND", "2026-05-07", "small"],
+    ["Kake Travel", "OMH_SG", "USD", "2025-07-29", "small"],
+    ["Stayzada", "OMH_KR", "KRW", "2023-08-08", "mid"],
+    ["Tira Travel", "OMH_KR", "KRW", "2024-03-07", "small"],
+  ];
+  const TIER = {
+    mega: { bk: [9000, 16000], take: [0.045, 0.065], cancel: [0.22, 0.34] },
+    large: { bk: [2500, 6000], take: [0.05, 0.08], cancel: [0.25, 0.4] },
+    mid: { bk: [700, 2200], take: [0.06, 0.09], cancel: [0.28, 0.46] },
+    small: { bk: [80, 600], take: [0.06, 0.11], cancel: [0.3, 0.5] },
   };
-  const DEPT_NAMEKEY = { OP: "op", CONTENT: "content", GSM: "gsm", SCM: "scm", FIN: "fin", HR: "hr", IT: "it" };
+  const ADR_USD = 118; // avg daily rate ~ per room-night (gross)
+  const sellers = SELLER_DEFS.map(function (d, i) {
+    const code = 200011 + i, tier = TIER[d[4]];
+    const bookings = bt(tier.bk[0], tier.bk[1]);
+    const los = 1.4 + btf(0, 0.9);            // length of stay
+    const roomNights = Math.round(bookings * los);
+    const gmvUSD = Math.round(roomNights * ADR_USD * btf(0.85, 1.15));
+    const take = btf(tier.take[0], tier.take[1]);
+    const netRevUSD = Math.round(gmvUSD * take);
+    const cancel = btf(tier.cancel[0], tier.cancel[1]);
+    const mom = btf(-0.12, 0.4);              // MoM growth
+    // receivables: fraction of GMV still unsettled, split by aging
+    const unsettled = Math.round(gmvUSD * btf(0.55, 0.95));
+    const paid = Math.round(gmvUSD - unsettled);
+    // small sellers & a couple of names carry more overdue (the story)
+    const overdueBias = d[4] === "small" || d[0] === "Hana Tour Business" || d[0] === "Kake Travel" ? btf(0.18, 0.4) : btf(0, 0.12);
+    const b60p = Math.round(unsettled * overdueBias * btf(0.4, 0.8));
+    const b31_60 = Math.round(unsettled * overdueBias * btf(0.2, 0.5));
+    const b16_30 = Math.round(unsettled * btf(0.1, 0.22));
+    const b0_15 = Math.max(0, unsettled - b60p - b31_60 - b16_30);
+    return {
+      code: code, name: d[0], entity: d[1], ccy: d[2], live: d[3], tier: d[4],
+      status: "Active", cycle: d[4] === "mega" ? "15D" : d[4] === "large" ? "15D" : "30D",
+      bookings: bookings, roomNights: roomNights, gmvUSD: gmvUSD, take: take, netRevUSD: netRevUSD,
+      cancelPct: cancel, momPct: mom,
+      receivableUSD: unsettled, paidUSD: paid,
+      aging: { b0_15: b0_15, b16_30: b16_30, b31_60: b31_60, b60p: b60p },
+      overdueUSD: b31_60 + b60p,
+    };
+  });
+  const sellerByCode = {}; sellers.forEach(function (s) { sellerByCode[s.code] = s; });
 
-  // ---------- employees ----------
-  const employees = [];
-  let seq = 0;
-  function addEmp(entKey, name, dept, role, tenure, salary) {
-    seq++;
-    const no = "E" + String(seq).padStart(3, "0");
-    const leave = {};
-    YEARS.forEach(function (y) {
-      const entitled = 15 + Math.min(tenure + (y - 2024), 5);
-      const used = Math.min(entitled, between(4, entitled, rnd()));
-      leave[y] = { entitled: entitled, used: used, pending: y === 2026 ? 0 : 0 };
-    });
-    employees.push({ no: no, name: name, entity: entKey, dept: dept, role: role, tenure: tenure, salary: salary, leave: leave });
-    return employees[employees.length - 1];
-  }
-
-  // fixed personas first (KR) so demo scenarios stay stable
-  const P = {};
-  P.E001 = addEmp("kr", "Grace Choi", "CEO", "CEO", 8, 420000);
-  P.E002 = addEmp("kr", "David Kim", "OP", "TEAM_LEADER", 6, 110000);
-  P.E003 = addEmp("kr", "Lucy Park", "OP", "EMPLOYEE", 4, 62000);
-  P.E004 = addEmp("kr", "Fiona Lee", "FIN", "FINANCE", 6, 115000);
-  P.E005 = addEmp("kr", "Hana Seo", "HR", "HR", 6, 108000);
-  P.E006 = addEmp("kr", "Jake Yang", "IT", "ADMIN", 6, 112000);
-  // remember persona ids
-  const PERSONA_IDS = { E001: P.E001.no, DAVID: P.E002.no, LUCY: P.E003.no, FIONA: P.E004.no, HANA: P.E005.no, JAKE: P.E006.no };
-
-  // fill the rest of the population per entity
-  ENTITIES.forEach(function (ent) {
-    const pool = NAMES[ent.key];
-    const target = ent.key === "kr" ? 30 : ent.key === "vn" ? 25 : 15;
-    let i = ent.key === "kr" ? 6 : 0; // KR already has 6 personas
-    let n = 0;
-    while (employees.filter(function (e) { return e.entity === ent.key; }).length < target && n < pool.length + target) {
-      const name = pool[(i + n) % pool.length] + (n >= pool.length ? " " + (Math.floor(n / pool.length) + 1) : "");
-      const dept = DEPTS[(n * 3 + i) % DEPTS.length];
-      const role = (n % 9 === 0) ? "TEAM_LEADER" : "EMPLOYEE";
-      const tenure = between(1, 7, rnd());
-      const salary = between(45000, 90000, rnd());
-      addEmp(ent.key, name, dept, role, tenure, salary);
-      n++;
-    }
+  // ---- booking aggregates (this month) ----
+  const totalBookings = sellers.reduce(function (a, s) { return a + s.bookings; }, 0);
+  const totalRoomNights = sellers.reduce(function (a, s) { return a + s.roomNights; }, 0);
+  const totalGMV = sellers.reduce(function (a, s) { return a + s.gmvUSD; }, 0);
+  const totalNet = sellers.reduce(function (a, s) { return a + s.netRevUSD; }, 0);
+  const wCancel = sellers.reduce(function (a, s) { return a + s.cancelPct * s.bookings; }, 0) / totalBookings;
+  const confirmed = Math.round(totalBookings * (1 - wCancel));
+  const status = {
+    Reserved: Math.round(confirmed * 0.62), Confirmed: Math.round(confirmed * 0.38),
+    Cancelled: Math.round(totalBookings * wCancel * 0.7),
+    "Cancelled(Replied)": Math.round(totalBookings * wCancel * 0.24),
+    "No-show": Math.round(totalBookings * wCancel * 0.06),
+  };
+  const COUNTRY_MIX = [["Japan", 0.34], ["Korea", 0.27], ["Vietnam", 0.14], ["Taiwan", 0.09], ["Thailand", 0.08], ["Others", 0.08]];
+  const byCountry = COUNTRY_MIX.map(function (c) { return { country: c[0], bookings: Math.round(totalBookings * c[1]), gmvUSD: Math.round(totalGMV * c[1]) }; });
+  const CONTRACT_MIX = [["Exclusive Rate", 0.30, 0.082], ["Dynamic Rate", 0.52, 0.058], ["Shared Rate", 0.18, 0.049]];
+  const byContract = CONTRACT_MIX.map(function (c) {
+    const gmv = Math.round(totalGMV * c[1]);
+    return { type: c[0], bookings: Math.round(totalBookings * c[1]), gmvUSD: gmv, take: c[2], netUSD: Math.round(gmv * c[2]) };
   });
 
-  // give the fixed personas realistic 2026 balances (with one pending demo request)
-  P.E003.leave[2026] = { entitled: 15, used: 3, pending: 0 };  // Lucy
-  P.E002.leave[2026] = { entitled: 18, used: 5, pending: 0 };
-
-  // ---------- finance: annual + monthly P&L per entity per year ----------
-  const MONTHS_OF = function (y) { const a = []; for (let m = 1; m <= 12; m++) a.push(y + "-" + String(m).padStart(2, "0")); return a; };
-  const pnlAnnual = {};   // pnlAnnual[entity][year] = {rev,cogs,opex,oi,oe}
-  const pnlMonth = {};    // pnlMonth[entity][period] = {...}
-  const balance = {};     // balance[entity][year] = {...}
-
+  // ---- finance per entity (revenue = net margin from that entity's sellers) ----
+  const YEARS = [2024, 2025, 2026];
+  const pnlAnnual = {}, balance = {};
   ENTITIES.forEach(function (ent) {
-    pnlAnnual[ent.code] = {}; pnlMonth[ent.code] = {}; balance[ent.code] = {};
-    let retained = Math.round(1200000 * ent.scale); // opening retained earnings
+    const entSellers = sellers.filter(function (s) { return s.entity === ent.code; });
+    const monthlyNet = entSellers.reduce(function (a, s) { return a + s.netRevUSD; }, 0);
+    pnlAnnual[ent.code] = {}; balance[ent.code] = {};
+    let retained = Math.round(monthlyNet * 6);
     YEARS.forEach(function (y, yi) {
-      const baseRev = Math.round(6800000 * ent.scale * Math.pow(1 + ent.growth, yi));
-      const cogs = Math.round(baseRev * 0.30);
-      // opex rises slightly faster in 2026 for KR (the "labor up" story)
-      let opex = Math.round(baseRev * 0.52);
-      if (ent.key === "kr" && y === 2026) opex = Math.round(opex * 1.06);
-      const oi = Math.round(baseRev * 0.004), oe = Math.round(baseRev * 0.002);
-      pnlAnnual[ent.code][y] = { rev: baseRev, cogs: cogs, opex: opex, oi: oi, oe: oe };
-      // monthly split (seasonal-ish)
-      const months = MONTHS_OF(y);
-      const weights = months.map(function (_, m) { return 0.7 + 0.03 * m + 0.15 * Math.sin(m / 2); });
-      const wsum = weights.reduce(function (a, b) { return a + b; }, 0);
-      months.forEach(function (p, m) {
-        const f = weights[m] / wsum;
-        pnlMonth[ent.code][p] = {
-          rev: Math.round(baseRev * f), cogs: Math.round(cogs * f), opex: Math.round(opex * f),
-          oi: Math.round(oi * f), oe: Math.round(oe * f),
-        };
-      });
-      // balance sheet at year end
-      const net = baseRev - cogs - opex + oi - oe;
-      retained += net;
-      const cash = Math.round(baseRev * 0.22);
-      const ar = Math.round(baseRev * 0.11);
-      const inventory = Math.round(cogs * 0.08);
-      const fixed = Math.round(baseRev * 0.35);
-      const totalAssets = cash + ar + inventory + fixed;
-      const capital = Math.round(1000000 * ent.scale);
-      const ap = Math.round(cogs * 0.10);
-      const loans = Math.max(0, totalAssets - capital - retained - ap);
+      const rev = Math.round(monthlyNet * 12 * Math.pow(1.14, yi - 2)); // net revenue (margin) annual
+      const cogs = Math.round(rev * 0.10);   // platform/supply cost
+      let opex = Math.round(rev * 0.62);
+      if (ent.code === "OMH_KR" && y === 2026) opex = Math.round(opex * 1.05);
+      const oi = Math.round(rev * 0.01), oe = Math.round(rev * 0.006);
+      pnlAnnual[ent.code][y] = { rev: rev, cogs: cogs, opex: opex, oi: oi, oe: oe };
+      const net = rev - cogs - opex + oi - oe; retained += net;
+      const gmvEnt = entSellers.reduce(function (a, s) { return a + s.gmvUSD; }, 0) * 12;
+      const cash = Math.round(rev * 0.6), ar = Math.round(gmvEnt * 0.09), fixed = Math.round(rev * 0.5), inv = 0;
+      const totalA = cash + ar + inv + fixed;
+      const capital = Math.round(rev * 0.4), ap = Math.round(gmvEnt * 0.07);
+      const loans = Math.max(0, totalA - capital - retained - ap);
       balance[ent.code][y] = {
-        assets: { cash: cash, ar: ar, inventory: inventory, fixed: fixed, total: totalAssets },
+        assets: { cash: cash, ar: ar, inventory: inv, fixed: fixed, total: totalA },
         liabilities: { ap: ap, loans: loans, total: ap + loans },
         equity: { capital: capital, retained: retained, total: capital + retained },
       };
     });
   });
+  function netSeries(entCode) {
+    const p = pnlAnnual[entCode][2026]; const base = (p.rev - p.cogs - p.opex + p.oi - p.oe) / 12;
+    const a = []; for (let m = 0; m < 12; m++) a.push(Math.round(base * (0.8 + 0.03 * m + 0.12 * Math.sin(m / 2)))); return a;
+  }
 
-  // ---------- AR / AP aging (current, for 2026) ----------
-  const aging = {};
+  // ---- HR: employees by entity + leave ----
+  const DEPTS = ["OP", "GSM", "SCM", "FIN", "HR", "IT"];
+  const DEPT_NAMEKEY = { OP: "op", GSM: "gsm", SCM: "scm", FIN: "fin", HR: "hr", IT: "it", CEO: "ceo" };
+  const NAMEPOOL = {
+    OMH_KR: ["Grace Choi", "David Kim", "Lucy Park", "Fiona Lee", "Hana Seo", "Jake Yang", "Mina Jung", "Noah Han", "Olivia Yoon", "Peter Kang", "Rachel Baek", "Sam Oh", "Tina Moon", "Yuna Jang", "Ben Suh", "Amy Cho"],
+    OMH_JP: ["Sato Yuki", "Tanaka Ren", "Suzuki Aoi", "Ito Haru", "Nakamura Sora", "Kobayashi Yui", "Yamamoto Kai", "Watanabe Mei"],
+    OMH_VN: ["Nguyen An", "Tran Binh", "Le Chi", "Pham Dung", "Hoang Em", "Vu Giang", "Dang Ha", "Bui Hai", "Do Khanh", "Ngo Lan", "Ly Nam", "Ho Oanh"],
+    OMH_SG: ["Wei Tan", "Jun Lim", "Mei Ng", "Kai Wong", "Xin Goh", "Ravi Kumar", "Siti Rahman", "Aiden Lee", "Chloe Teo", "Ethan Sim"],
+  };
+  const employees = []; let seq = 0;
+  function addEmp(entity, name, dept, role) {
+    seq++; const no = "E" + String(seq).padStart(3, "0");
+    const leave = {}; YEARS.forEach(function (y) { const ent = 15 + bt(0, 5), used = Math.min(ent, bt(4, ent)); leave[y] = { entitled: ent, used: used, pending: 0 }; });
+    employees.push({ no: no, name: name, entity: entity, dept: dept, role: role, leave: leave });
+    return employees[employees.length - 1];
+  }
+  // fixed personas (KR HQ)
+  const P = {};
+  P.CEO = addEmp("OMH_KR", "Grace Choi", "CEO", "CEO");
+  P.OPS = addEmp("OMH_KR", "David Kim", "OP", "OPS");         // 운영 리더 (also approver)
+  P.STAFF = addEmp("OMH_KR", "Lucy Park", "OP", "STAFF");     // 사원
+  P.FIN = addEmp("OMH_KR", "Fiona Lee", "FIN", "FINANCE");
+  P.HR = addEmp("OMH_KR", "Hana Seo", "HR", "HR");
+  P.GSM = addEmp("OMH_KR", "Yuna Jang", "GSM", "SALES");      // 세일즈
+  P.SCM = addEmp("OMH_KR", "Ben Suh", "SCM", "SUPPLY");       // 공급
+  const PERSONA_IDS = { CEO: P.CEO.no, OPS: P.OPS.no, STAFF: P.STAFF.no, FIN: P.FIN.no, HR: P.HR.no, GSM: P.GSM.no, SCM: P.SCM.no };
+  // fill remaining population per entity
   ENTITIES.forEach(function (ent) {
-    const r = pnlAnnual[ent.code][2026].rev;
-    aging[ent.code] = {
-      ar: [["0-30", Math.round(r * 0.06)], ["31-60", Math.round(r * 0.03)], ["61-90", Math.round(r * 0.015)], ["90+", Math.round(r * 0.008)]],
-      ap: [["0-30", Math.round(r * 0.04)], ["31-60", Math.round(r * 0.02)], ["61-90", Math.round(r * 0.008)], ["90+", Math.round(r * 0.004)]],
-    };
+    const pool = NAMEPOOL[ent.code]; const target = ent.code === "OMH_KR" ? 20 : ent.code === "OMH_VN" ? 12 : ent.code === "OMH_SG" ? 10 : 8;
+    let n = 0;
+    while (employees.filter(function (e) { return e.entity === ent.code; }).length < target && n < pool.length + target) {
+      addEmp(ent.code, pool[n % pool.length] + (n >= pool.length ? " " + (Math.floor(n / pool.length) + 1) : ""), DEPTS[n % DEPTS.length], n % 8 === 0 ? "OPS" : "STAFF"); n++;
+    }
   });
+  P.STAFF.leave[2026] = { entitled: 15, used: 3, pending: 0 };
 
-  // ---------- per-department budget vs actual (2026, KR) ----------
-  function budgetVariance(entCode, year) {
-    return DEPTS.map(function (d) {
-      const emps = employees.filter(function (e) { return entOf(e.entity) === entCode && e.dept === d; });
-      const actual = emps.reduce(function (s, e) { return s + Math.round(e.salary / 12); }, 0);
-      const budget = Math.round(actual * (0.9 + 0.25 * rnd()));
-      return { dept: d, deptKey: DEPT_NAMEKEY[d], budget: budget, actual: actual, variance: budget - actual };
-    });
-  }
-
-  // helpers
-  function entOf(key) { const m = { kr: "OMH_KR", vn: "OMH_VN", sg: "OMH_SG" }; return m[key]; }
-  function keyOfEnt(code) { const m = { OMH_KR: "kr", OMH_VN: "vn", OMH_SG: "sg" }; return m[code]; }
+  function keyOf(code) { return code; }
   function empByNo(no) { return employees.find(function (e) { return e.no === no; }); }
+  function usd(seller, native) { return native ? Math.round(seller.receivableUSD / FX_USD[seller.ccy]) : seller.receivableUSD; }
 
-  // leave usage analysis: by department for an entity+year
+  // aggregates used by reports
+  function arAging() {
+    const buckets = { b0_15: 0, b16_30: 0, b31_60: 0, b60p: 0 };
+    sellers.forEach(function (s) { buckets.b0_15 += s.aging.b0_15; buckets.b16_30 += s.aging.b16_30; buckets.b31_60 += s.aging.b31_60; buckets.b60p += s.aging.b60p; });
+    const watch = sellers.filter(function (s) { return s.overdueUSD > 0; }).sort(function (a, b) { return b.overdueUSD - a.overdueUSD; }).slice(0, 5);
+    return { buckets: buckets, watch: watch };
+  }
+  function currencyExposure() {
+    const m = {}; CCYS.forEach(function (c) { m[c] = { usd: 0, native: 0 }; });
+    sellers.forEach(function (s) { m[s.ccy].usd += s.receivableUSD; m[s.ccy].native += Math.round(s.receivableUSD / FX_USD[s.ccy]); });
+    return CCYS.map(function (c) { return { ccy: c, usd: m[c].usd, native: m[c].native }; }).filter(function (x) { return x.usd > 0; }).sort(function (a, b) { return b.usd - a.usd; });
+  }
+  function sellerRanking() { return sellers.slice().sort(function (a, b) { return b.gmvUSD - a.gmvUSD; }); }
+  function newSellers() { return sellers.filter(function (s) { return s.live >= "2025-01-01"; }).sort(function (a, b) { return a.live < b.live ? 1 : -1; }); }
   function leaveUsage(entCode, year) {
-    const key = keyOfEnt(entCode);
     const rows = DEPTS.map(function (d) {
-      const emps = employees.filter(function (e) { return e.entity === key && e.dept === d; });
-      if (!emps.length) return null;
-      let ent = 0, used = 0;
-      emps.forEach(function (e) { const l = e.leave[year]; if (l) { ent += l.entitled; used += l.used; } });
-      return { dept: d, deptKey: DEPT_NAMEKEY[d], employees: emps.length, entitled: ent, used: used, rate: ent ? Math.round((used / ent) * 1000) / 10 : 0 };
+      const es = employees.filter(function (e) { return e.entity === entCode && e.dept === d; });
+      if (!es.length) return null; let ent = 0, used = 0;
+      es.forEach(function (e) { const l = e.leave[year]; ent += l.entitled; used += l.used; });
+      return { deptKey: DEPT_NAMEKEY[d], employees: es.length, entitled: ent, used: used, rate: ent ? Math.round(used / ent * 1000) / 10 : 0 };
     }).filter(Boolean);
-    let te = 0, tu = 0, tc = 0;
-    rows.forEach(function (r) { te += r.entitled; tu += r.used; tc += r.employees; });
-    return { entity: entCode, year: year, rows: rows, total: { employees: tc, entitled: te, used: tu, rate: te ? Math.round((tu / te) * 1000) / 10 : 0 } };
+    let te = 0, tu = 0, tc = 0; rows.forEach(function (r) { te += r.entitled; tu += r.used; tc += r.employees; });
+    return { entity: entCode, year: year, rows: rows, total: { employees: tc, entitled: te, used: tu, rate: te ? Math.round(tu / te * 1000) / 10 : 0 } };
   }
-
-  function headcount(entCode) {
-    const list = entCode ? [entCode] : ENTITIES.map(function (e) { return e.code; });
-    return list.map(function (code) {
-      const key = keyOfEnt(code);
-      const byDept = DEPTS.map(function (d) {
-        return { dept: d, deptKey: DEPT_NAMEKEY[d], count: employees.filter(function (e) { return e.entity === key && e.dept === d; }).length };
-      }).filter(function (x) { return x.count > 0; });
-      return { entity: code, total: employees.filter(function (e) { return e.entity === key; }).length, byDept: byDept };
+  function headcount() {
+    return ENTITIES.map(function (ent) {
+      return { entity: ent.code, total: employees.filter(function (e) { return e.entity === ent.code; }).length };
     });
-  }
-
-  function entityRevenue(year) {
-    return ENTITIES.map(function (e) { return { entity: e.code, revenue: pnlAnnual[e.code][year].rev }; });
   }
 
   return {
-    YEARS: YEARS, ENTITIES: ENTITIES, DEPTS: DEPTS, DEPT_NAMEKEY: DEPT_NAMEKEY,
-    employees: employees, PERSONA_IDS: PERSONA_IDS,
-    pnlAnnual: pnlAnnual, pnlMonth: pnlMonth, balance: balance, aging: aging,
-    entOf: entOf, keyOfEnt: keyOfEnt, empByNo: empByNo,
-    leaveUsage: leaveUsage, headcount: headcount, entityRevenue: entityRevenue, budgetVariance: budgetVariance,
+    ENTITIES: ENTITIES, CCYS: CCYS, FX_USD: FX_USD, DEPT_NAMEKEY: DEPT_NAMEKEY, YEARS: YEARS,
+    sellers: sellers, sellerByCode: sellerByCode, employees: employees, PERSONA_IDS: PERSONA_IDS,
+    bookings: { total: totalBookings, roomNights: totalRoomNights, gmvUSD: totalGMV, netUSD: totalNet, cancelPct: wCancel, status: status, byCountry: byCountry, byContract: byContract },
+    pnlAnnual: pnlAnnual, balance: balance, netSeries: netSeries,
+    empByNo: empByNo, arAging: arAging, currencyExposure: currencyExposure, sellerRanking: sellerRanking, newSellers: newSellers,
+    leaveUsage: leaveUsage, headcount: headcount,
   };
 })();

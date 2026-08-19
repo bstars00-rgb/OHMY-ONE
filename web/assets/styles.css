@@ -114,6 +114,8 @@ button{font-family:inherit}
 .msg .q b{color:var(--text)}
 .msg .a{padding:14px} .msg .a p{margin:0 0 8px} .msg .a p:last-child{margin:0}
 .interp{border-left:3px solid var(--accent);padding-left:11px;color:var(--text-dim);font-size:13px;margin-top:6px}
+.insight{margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--accent-wash);border:1px solid var(--accent);color:var(--text);font-size:13px;line-height:1.5}
+.tw{overflow-x:auto}
 .msg.deny{border-color:var(--deny)} .msg.deny .q{background:var(--deny-wash)}
 .msg.crit{border-color:var(--warn)} .msg.crit .q{background:var(--warn-wash)}
 .stmt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:4px}

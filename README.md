@@ -17,14 +17,26 @@ deterministic calculations, append-only audit) with no server. Auto-deployed by
 [GitHub Actions](.github/workflows/deploy.yml) on every push to `main`. It is a
 **simulation for presentations** — figures are representative sample data.
 
+Modeled on OHMY's **real business** — a B2B hotel bedbank distributing inventory
+to OTA/agency **sellers** across 4 entities (see [docs/DOMAIN_RESEARCH.md](docs/DOMAIN_RESEARCH.md)).
+
 - **OHMY CI branding** (brand orange `#ef7f29`), light/dark themes.
 - **5 languages**: 한국어 · English · Tiếng Việt · 中文 · 日本語 (live switcher).
-- **6 personas** with real, differing permissions; switch and watch access change.
-- **Advanced finance**: monthly & annual P&L, **balance sheet** (reconciles),
-  entity revenue comparison, AR aging, budget variance, period comparison.
-- **HR analytics**: leave balance/request/approval, **leave-usage analysis by
-  entity & year** (e.g. Vietnam 2025), headcount by entity.
-- ~70 employees across Korea/Vietnam/Singapore, 3 fiscal years of ledger data.
+- **7 team personas** (Ops / Sales / Supply / Finance / HR / CEO / Staff) with
+  real, differing permissions; switch and watch access change.
+- **Decision-grade answers** — each report ends with an **insight / action**, not
+  just a table:
+  - **Finance**: seller **settlement & receivables**, **AR aging + overdue
+    watchlist**, **currency (FX) exposure**, net-revenue (margin) by entity,
+    P&L / balance sheet.
+  - **Operations**: **booking dashboard** (volume, room-nights, GMV, take-rate,
+    **cancellation rate**), cancellation by channel, bookings by country.
+  - **Sales**: **seller performance ranking** + MoM growth, new-seller ramp,
+    **concentration risk**.
+  - **Supply**: margin by **contract type** (Exclusive/Dynamic/Shared).
+  - **HR**: leave usage by entity/year, headcount, leave workflow.
+  - **Exec**: cross-entity summary (GMV, margin, cancel, overdue, concentration).
+- ~20 sellers, ~50 employees across KR/JP/VN/SG; realistic synthetic figures.
 - Every answer shows its **provenance** (tool, permission, audit); denials are
   audited as `PERMISSION_DENIED`.
 
