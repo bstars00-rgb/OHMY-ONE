@@ -9,9 +9,9 @@ const OHMY = (function () {
     OPS: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "HR_LEAVE_READ_TEAM", "APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_REJECT", "OPS_READ"],
     SALES: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "OPS_READ", "SALES_READ"],
     SUPPLY: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "SUPPLY_READ", "OPS_READ"],
-    FINANCE: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "FIN_SETTLEMENT_READ", "FIN_AR_READ", "FIN_PNL_READ"],
+    FINANCE: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "FIN_SETTLEMENT_READ", "FIN_AR_READ", "FIN_PNL_READ", "APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_REJECT"],
     HR: ["HR_LEAVE_READ_SELF", "HR_LEAVE_CREATE_SELF", "HR_LEAVE_READ_TEAM", "HR_LEAVE_READ_ALL", "HR_EMPLOYEE_READ_ALL", "APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_REJECT"],
-    CEO: ["HR_LEAVE_READ_SELF", "HR_LEAVE_READ_ALL", "APPROVAL_READ", "OPS_READ", "SALES_READ", "SUPPLY_READ", "FIN_SETTLEMENT_READ", "FIN_AR_READ", "FIN_PNL_READ", "EXEC_READ"],
+    CEO: ["HR_LEAVE_READ_SELF", "HR_LEAVE_READ_ALL", "APPROVAL_READ", "APPROVAL_APPROVE", "APPROVAL_REJECT", "OPS_READ", "SALES_READ", "SUPPLY_READ", "FIN_SETTLEMENT_READ", "FIN_AR_READ", "FIN_PNL_READ", "EXEC_READ"],
   };
   const PERSONAS = [PID.STAFF, PID.OPS, PID.GSM, PID.SCM, PID.FIN, PID.HR, PID.CEO];
 
@@ -20,14 +20,31 @@ const OHMY = (function () {
   function can(no, code) { return perms(no).indexOf(code) >= 0; }
   function approverOf(no) { return no === PID.STAFF ? PID.OPS : PID.CEO; }
 
-  // approvals + audit
-  let seq = 1; const leaveReqs = [], approvals = [];
-  function newLeave(no, date, days) { const id = "REQ-" + (seq++); leaveReqs.push({ id, requesterNo: no, date, days, status: "PENDING" }); approvals.push({ id, requesterNo: no, approverNo: approverOf(no), date, days, status: "PENDING" }); return id; }
-  newLeave(PID.STAFF, "2026-08-20", 1);
+  // ---- e-approval drafts (기안/전자결재), multi-step by amount ----
+  let seq = 1; const drafts = [];
+  function leaderOf(no) { return no === PID.OPS ? PID.CEO : PID.OPS; }   // step-1 team leader
+  function routeApprovers(reqNo, amount) {
+    let chain = [leaderOf(reqNo)];
+    if (amount > 1000000) chain.push(PID.FIN);    // + finance
+    if (amount > 5000000) chain.push(PID.CEO);    // + CEO
+    chain = chain.filter(function (x, i) { return x !== reqNo && chain.indexOf(x) === i; });
+    if (!chain.length) chain = [PID.CEO];
+    return chain.map(function (a, i) { return { no: i + 1, approverNo: a, status: "PENDING" }; });
+  }
+  function newDraft(reqNo, type, title, amount, days) {
+    const id = "DR-" + String(seq++).padStart(3, "0");
+    const dr = { id: id, requesterNo: reqNo, type: type, title: title || "", amount: amount || 0, days: days || 0, steps: routeApprovers(reqNo, amount || 0), currentStep: 1, status: "PENDING", createdAt: new Date() };
+    drafts.push(dr);
+    if (type === "LEAVE" && days) emp(reqNo).leave[2026].pending += days;
+    return dr;
+  }
+  function currentApprover(dr) { const s = dr.steps.find(function (x) { return x.no === dr.currentStep; }); return s ? s.approverNo : null; }
+  function applyDraftEffect(dr, fin) { if (dr.type === "LEAVE" && dr.days) { const l = emp(dr.requesterNo).leave[2026]; l.pending = Math.max(0, l.pending - dr.days); if (fin === "APPROVED") l.used += dr.days; } }
+  newDraft(PID.STAFF, "LEAVE", "연차 1일 · 2026-08-20", 0, 1);   // seed one pending for the team leader
   const audit = []; let aSeq = 0;
   function writeAudit(no, action, tool, detail, ok) { aSeq++; audit.unshift({ id: "a" + String(aSeq).padStart(4, "0"), ts: new Date(), actorNo: no, actor: emp(no).name, action, tool: tool || "—", detail: detail || "", success: ok !== false }); }
 
-  const RISK = { create_leave_request: "LOW_RISK_WRITE", approve_request: "APPROVAL", reject_request: "APPROVAL" };
+  const RISK = { create_leave_request: "LOW_RISK_WRITE", submit_draft: "LOW_RISK_WRITE", approve_request: "APPROVAL", reject_request: "APPROVAL" };
   function ok(no, tool, perm, action, kind, data) { writeAudit(no, action, tool, "", true); return { ok: true, tool, perm, risk: RISK[tool] || "READ", audit: action, kind, data }; }
   function deny(no, tool, need) { writeAudit(no, "PERMISSION_DENIED", tool, "missing " + need, false); return { ok: false, tool, need, kind: "deny" }; }
 
@@ -116,29 +133,37 @@ const OHMY = (function () {
       if (target !== a && !can(a, "HR_LEAVE_READ_ALL") && !(can(a, "HR_LEAVE_READ_TEAM") && approverOf(target) === a)) return deny(a, "get_leave_balance", "HR_LEAVE_READ_TEAM/ALL");
       const e = emp(target), l = e.leave[2026]; return ok(a, "get_leave_balance", "HR_LEAVE_READ_SELF", "LEAVE_BALANCE_VIEWED", "leaveBalance", { self: target === a, name: e.name, entitled: l.entitled, carried: 2, used: l.used, pending: l.pending, remaining: l.entitled + 2 - l.used - l.pending });
     },
-    createLeave: function (a) {
-      const date = "2026-08-20"; const dup = leaveReqs.find(function (r) { return r.requesterNo === a && r.date === date && r.status !== "CANCELLED"; });
-      if (dup) return ok(a, "create_leave_request", "HR_LEAVE_CREATE_SELF", "LEAVE_REQUEST_DUP", "createLeaveDup", { id: dup.id });
-      const id = newLeave(a, date, 1); return ok(a, "create_leave_request", "HR_LEAVE_CREATE_SELF", "LEAVE_REQUEST_CREATED", "createLeave", { id: id, date: date, days: 1, approver: emp(approverOf(a)).name, approverRole: emp(approverOf(a)).role });
+    // 기안 상신 (any proposal; cost optional; amount drives the approval chain)
+    submitDraft: function (a, args) {
+      const type = (args && args.type) || "GENERAL", amount = (args && args.amount) || 0;
+      const days = (args && args.days) || (type === "LEAVE" ? 1 : 0);
+      const title = (args && args.title) || "";
+      if (type === "LEAVE" && days) { const l = emp(a).leave[2026]; if (l.entitled + 2 - l.used - l.pending < days) return deny(a, "submit_draft", "잔여 연차 부족"); }
+      const dr = newDraft(a, type, title, amount, days);
+      const line = dr.steps.map(function (s) { return { name: emp(s.approverNo).name, role: emp(s.approverNo).role }; });
+      return ok(a, "submit_draft", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: type, title: title, amount: amount, days: days, line: line });
     },
+    createLeave: function (a) { return API.submitDraft(a, { type: "LEAVE", days: 1, title: "연차 1일 · 2026-08-20" }); },
     pending: function (a) {
       if (!can(a, "APPROVAL_APPROVE") && !can(a, "APPROVAL_READ")) return deny(a, "get_my_pending_approvals", "APPROVAL_APPROVE");
-      const rows = approvals.filter(function (x) { return x.approverNo === a && x.status === "PENDING"; }).map(function (x) { return { id: x.id, requester: emp(x.requesterNo).name, date: x.date, days: x.days }; });
-      return ok(a, "get_my_pending_approvals", "APPROVAL_APPROVE", "APPROVALS_VIEWED", "pending", { rows: rows });
+      const rows = drafts.filter(function (dr) { return dr.status === "PENDING" && currentApprover(dr) === a; }).map(function (dr) { return { id: dr.id, requester: emp(dr.requesterNo).name, type: dr.type, title: dr.title, amount: dr.amount, step: dr.currentStep, steps: dr.steps.length }; });
+      return ok(a, "get_my_pending_approvals", can(a, "APPROVAL_APPROVE") ? "APPROVAL_APPROVE" : "APPROVAL_READ", "APPROVALS_VIEWED", "pending", { rows: rows });
     },
     approve: function (a, id) {
       if (!can(a, "APPROVAL_APPROVE")) return deny(a, "approve_request", "APPROVAL_APPROVE");
-      const ap = approvals.find(function (x) { return x.id === id; }); if (!ap || ap.status !== "PENDING") return ok(a, "approve_request", "APPROVAL_APPROVE", "APPROVAL_NOOP", "note", { text: "noop" });
-      if (ap.approverNo !== a) return deny(a, "approve_request", "not the assigned approver (server-checked)");
-      ap.status = "APPROVED"; leaveReqs.find(function (x) { return x.id === id; }).status = "APPROVED";
-      return ok(a, "approve_request", "APPROVAL_APPROVE", "LEAVE_REQUEST_APPROVED", "approve", { name: emp(ap.requesterNo).name, date: ap.date });
+      const dr = drafts.find(function (x) { return x.id === id; }); if (!dr || dr.status !== "PENDING") return ok(a, "approve_request", "APPROVAL_APPROVE", "APPROVAL_NOOP", "note", { text: "noop" });
+      if (currentApprover(dr) !== a) return deny(a, "approve_request", "not the current-step approver (server-checked)");
+      dr.steps.find(function (s) { return s.no === dr.currentStep; }).status = "APPROVED";
+      if (dr.currentStep < dr.steps.length) { dr.currentStep++; const nx = emp(currentApprover(dr)); return ok(a, "approve_request", "APPROVAL_APPROVE", "DRAFT_STEP_APPROVED", "approve", { title: dr.title, type: dr.type, final: false, next: nx.name, nextRole: nx.role, step: dr.currentStep, steps: dr.steps.length }); }
+      dr.status = "APPROVED"; applyDraftEffect(dr, "APPROVED");
+      return ok(a, "approve_request", "APPROVAL_APPROVE", "DRAFT_APPROVED", "approve", { title: dr.title, type: dr.type, final: true });
     },
     reject: function (a, id) {
       if (!can(a, "APPROVAL_REJECT")) return deny(a, "reject_request", "APPROVAL_REJECT");
-      const ap = approvals.find(function (x) { return x.id === id; }); if (!ap || ap.status !== "PENDING") return ok(a, "reject_request", "APPROVAL_REJECT", "APPROVAL_NOOP", "note", { text: "noop" });
-      if (ap.approverNo !== a) return deny(a, "reject_request", "not the assigned approver (server-checked)");
-      ap.status = "REJECTED"; leaveReqs.find(function (x) { return x.id === id; }).status = "REJECTED";
-      return ok(a, "reject_request", "APPROVAL_REJECT", "LEAVE_REQUEST_REJECTED", "reject", { name: emp(ap.requesterNo).name });
+      const dr = drafts.find(function (x) { return x.id === id; }); if (!dr || dr.status !== "PENDING") return ok(a, "reject_request", "APPROVAL_REJECT", "APPROVAL_NOOP", "note", { text: "noop" });
+      if (currentApprover(dr) !== a) return deny(a, "reject_request", "not the current-step approver (server-checked)");
+      dr.status = "REJECTED"; applyDraftEffect(dr, "REJECTED");
+      return ok(a, "reject_request", "APPROVAL_REJECT", "DRAFT_REJECTED", "reject", { title: dr.title, type: dr.type });
     },
     leaveUsage: function (a, args) {
       if (!can(a, "HR_LEAVE_READ_ALL")) return deny(a, "leave_usage_analysis", "HR_LEAVE_READ_ALL");
@@ -158,6 +183,17 @@ const OHMY = (function () {
     if (intent === "approve") return API.approve(actor, args);
     if (intent === "reject") return API.reject(actor, args);
     const fn = API[intent]; return fn ? fn(actor, args) : null;
+  }
+
+  function parseAmount(text) {
+    var t = (text || "").replace(/,/g, ""); var m;
+    if (m = /([0-9]+)\s*억/.exec(t)) return parseInt(m[1], 10) * 100000000;
+    if (m = /([0-9]+)\s*천만/.exec(t)) return parseInt(m[1], 10) * 10000000;
+    if (m = /([0-9]+)\s*백만/.exec(t)) return parseInt(m[1], 10) * 1000000;
+    if (m = /([0-9]+)\s*만/.exec(t)) return parseInt(m[1], 10) * 10000;
+    if (m = /([0-9]+)\s*원/.exec(t)) return parseInt(m[1], 10);
+    if (m = /([0-9]{4,})/.exec(t)) return parseInt(m[1], 10);
+    return 0;
   }
 
   function route(text) {
@@ -182,6 +218,10 @@ const OHMY = (function () {
     if (any("재무상태표", "대차대조표", "balance sheet", "貸借", "资产负债", "cân đối")) return { intent: "balanceSheet", args: { year: year || 2025, entity: entity } };
     if (any("손익", "p&l", "pnl", "income", "損益", "损益", "kết quả")) return { intent: "pnl", args: { year: year || 2025, entity: entity } };
     if (any("연차", "휴가", "leave", "有給", "年假", "phép") && any("분석", "usage", "分析", "phân tích")) return { intent: "leaveUsage", args: { entity: entity || "OMH_VN", year: year || 2025 } };
+    if (any("기안", "상신", "품의", "올려", "결재", "draft", "proposal", "đề xuất", "起案", "稟議", "申请", "报批")) {
+      var dtype = any("출장", "trip", "công tác", "出張", "出差") ? "TRIP" : any("경비", "지출", "expense", "chi phí", "経費", "费用") ? "EXPENSE" : any("구매", "purchase", "mua", "購入", "采购") ? "PURCHASE" : any("연차", "휴가", "leave", "有給", "年假", "phép") ? "LEAVE" : "GENERAL";
+      return { intent: "submitDraft", args: { type: dtype, amount: parseAmount(text), title: (text || "").trim().slice(0, 40), days: dtype === "LEAVE" ? 1 : 0 } };
+    }
     if (any("연차", "leave", "有給", "phép") && any("남", "잔여", "remain", "còn", "残", "剩")) return { intent: "leaveBalance" };
     if (any("연차", "휴가", "leave", "有給") && any("신청", "쓸", "take", "nghỉ", "请")) return { intent: "createLeave" };
     if (any("승인") || any("approve", "duyệt", "承認", "审批")) return { intent: "pending" };
@@ -190,5 +230,5 @@ const OHMY = (function () {
     return null;
   }
 
-  return { PERSONAS: PERSONAS, emp: emp, perms: perms, can: can, call: call, route: route, audit: function () { return audit; }, approvals: function () { return approvals; } };
+  return { PERSONAS: PERSONAS, emp: emp, perms: perms, can: can, call: call, route: route, audit: function () { return audit; }, pendingDrafts: function (no) { return drafts.filter(function (dr) { return dr.status === "PENDING" && currentApprover(dr) === no; }); } };
 })();

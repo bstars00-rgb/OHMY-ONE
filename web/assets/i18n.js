@@ -267,6 +267,22 @@ const I18N = (function () {
     ins_contract: { ko: "{type} 계약이 테이크율 {pct}로 최고 — 해당 유형 공급 확대가 마진에 유리합니다.", en: "{type} contracts have the best take at {pct} — expanding this supply lifts margin.", vi: "Hợp đồng {type} biên tốt nhất {pct}.", zh: "{type} 合约抽成最高{pct}，扩大该类供给利于利差。", ja: "{type} 契約がテイク率{pct}で最高 — 供給拡大がマージンに有利。" },
     ins_exec: { ko: "취소율 {cancel}, 60일+ 연체 {over60}, Top5 집중도 {top5}. 연체 회수와 채널 다변화가 우선 과제입니다.", en: "Cancel {cancel}, 60d+ overdue {over60}, top-5 concentration {top5}. Priorities: collect overdue AR and diversify channels.", vi: "Hủy {cancel}, quá hạn 60n+ {over60}, tập trung Top5 {top5}.", zh: "取消{cancel}，逾期60天+{over60}，前5集中{top5}。优先催收与多元化。", ja: "取消{cancel}、60日+延滞{over60}、上位5集中{top5}。延滞回収とチャネル多様化が優先。" },
     ins_leaveUsage: { ko: "전사 소진율 {rate}%. 낮은 부서는 미사용 연차 충당부채가 누적될 수 있습니다.", en: "Company usage {rate}%. Low-usage teams risk accruing unused-leave liability.", vi: "Tỷ lệ {rate}%. Phòng ban dùng ít tích lũy nợ phép.", zh: "全公司使用率{rate}%。使用率低者积累未休假负债。", ja: "全社取得率{rate}%。低取得部門は未消化負債が蓄積。" },
+
+    // e-approval (기안/전자결재)
+    dt_TRIP: { ko: "출장 신청", en: "Trip request", vi: "Đề nghị công tác", zh: "出差申请", ja: "出張申請" },
+    dt_EXPENSE: { ko: "경비/지출 결의", en: "Expense claim", vi: "Đề nghị chi phí", zh: "费用报销", ja: "経費精算" },
+    dt_PURCHASE: { ko: "구매 요청", en: "Purchase request", vi: "Yêu cầu mua", zh: "采购申请", ja: "購入申請" },
+    dt_LEAVE: { ko: "휴가 신청", en: "Leave request", vi: "Đề nghị nghỉ", zh: "休假申请", ja: "休暇申請" },
+    dt_GENERAL: { ko: "일반 기안", en: "General proposal", vi: "Đề xuất chung", zh: "一般起草", ja: "一般起案" },
+    dr_submitted: { ko: "기안이 상신되었습니다", en: "Proposal submitted", vi: "Đã trình đề xuất", zh: "已提交起草", ja: "起案を提出しました" },
+    dr_amount: { ko: "금액", en: "Amount", vi: "Số tiền", zh: "金额", ja: "金額" },
+    dr_noamount: { ko: "비용 없음", en: "No cost", vi: "Không chi phí", zh: "无费用", ja: "費用なし" },
+    dr_line: { ko: "결재선", en: "Approval line", vi: "Tuyến duyệt", zh: "审批线", ja: "決裁ライン" },
+    dr_step: { ko: "{cur}/{tot}단계", en: "step {cur}/{tot}", vi: "bước {cur}/{tot}", zh: "第{cur}/{tot}步", ja: "{cur}/{tot}段階" },
+    dr_approved_final: { ko: "‘{title}’ 기안 최종 승인 완료.", en: "'{title}' fully approved.", vi: "'{title}' đã duyệt hoàn toàn.", zh: "‘{title}’ 已最终批准。", ja: "『{title}』最終承認完了。" },
+    dr_approved_step: { ko: "‘{title}’ 승인 — 다음 결재: {next}({role}).", en: "'{title}' approved — next: {next} ({role}).", vi: "'{title}' đã duyệt — kế: {next} ({role}).", zh: "‘{title}’ 已批准 — 下一步：{next}（{role}）。", ja: "『{title}』承認 — 次の決裁: {next}（{role}）。" },
+    dr_rejected: { ko: "‘{title}’ 기안이 반려되었습니다.", en: "'{title}' was rejected.", vi: "'{title}' bị từ chối.", zh: "‘{title}’ 已驳回。", ja: "『{title}』は却下されました。" },
+    ins_draft: { ko: "{n}단계 결재선으로 라우팅됨. 다음 결재자는 {first}입니다 (금액에 따라 결재선이 자동 결정).", en: "Routed to a {n}-step approval line; first approver is {first} (line auto-set by amount).", vi: "Định tuyến {n} bước; người duyệt đầu là {first}.", zh: "路由至{n}级审批线，首位审批人{first}（金额自动决定审批线）。", ja: "{n}段階の決裁ラインへ。最初の決裁者は{first}（金額により自動設定）。" },
   };
 
   // Per-persona curated question sets — each role only sees what it actually asks.
@@ -274,42 +290,44 @@ const I18N = (function () {
   const PERSONA_CHIPS = {
     STAFF: [
       { cat: "HR", intent: "leaveBalance" },
-      { cat: "HR", intent: "createLeave" },
+      { cat: "결재", intent: "createLeave" },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitTrip", args: { type: "TRIP", amount: 500000, title: "출장비 · 부산 2박" } },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseWS", args: { type: "EXPENSE", amount: 8000000, title: "팀 워크샵 예산" } },
     ],
     OPS: [
       { cat: "OPS", intent: "bookingDashboard" },
       { cat: "OPS", intent: "cancellation" },
       { cat: "OPS", intent: "bookingsByCountry" },
-      { cat: "HR", intent: "createLeave" },
+      { cat: "결재", intent: "pending" },
     ],
     SALES: [
       { cat: "SALES", intent: "sellerRanking" },
       { cat: "SALES", intent: "newSellers" },
       { cat: "SALES", intent: "concentration" },
-      { cat: "OPS", intent: "cancellation" },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseWS", args: { type: "EXPENSE", amount: 8000000, title: "채널 세일즈 인센티브 예산" } },
     ],
     SUPPLY: [
       { cat: "SUPPLY", intent: "contractMix" },
       { cat: "OPS", intent: "bookingsByCountry" },
-      { cat: "HR", intent: "createLeave" },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitPurchase", args: { type: "PURCHASE", amount: 3000000, title: "공급 모니터링 도구 구매" } },
     ],
     FINANCE: [
       { cat: "FINANCE", intent: "settlement", args: { seller: "Agoda" } },
       { cat: "FINANCE", intent: "arAging" },
       { cat: "FINANCE", intent: "currencyExposure" },
-      { cat: "FINANCE", intent: "revenueByEntity" },
+      { cat: "결재", intent: "pending" },
     ],
     HR: [
       { cat: "HR", intent: "leaveUsage", args: { entity: "OMH_VN", year: 2025 } },
       { cat: "HR", intent: "headcount" },
-      { cat: "APPROVAL", intent: "pending" },
-      { cat: "HR", intent: "createLeave" },
+      { cat: "결재", intent: "pending" },
+      { cat: "결재", intent: "createLeave" },
     ],
     CEO: [
       { cat: "EXEC", intent: "execSummary" },
       { cat: "FINANCE", intent: "revenueByEntity" },
       { cat: "SALES", intent: "concentration" },
-      { cat: "FINANCE", intent: "arAging" },
+      { cat: "결재", intent: "pending" },
     ],
   };
   const CHIP_LABEL = {
@@ -330,6 +348,9 @@ const I18N = (function () {
     createLeave: { ko: "내일 연차 쓸게.", en: "I'll take leave tomorrow.", vi: "Ngày mai tôi nghỉ phép.", zh: "我明天请假。", ja: "明日 有給を取ります。" },
     leaveBalance: { ko: "내 연차 얼마나 남았어?", en: "How much leave do I have left?", vi: "Tôi còn bao nhiêu phép?", zh: "我还剩多少年假？", ja: "有給はあとどれくらい？" },
     pending: { ko: "내가 승인해야 할 것 보여줘.", en: "Show what I need to approve.", vi: "Mục cần tôi duyệt?", zh: "需要我审批的？", ja: "承認すべきものは？" },
+    submitTrip: { ko: "출장비 50만원 기안 올려줘.", en: "Submit a ₩500K travel-expense proposal.", vi: "Trình đề nghị công tác ₩500K.", zh: "提交50万韩元出差费起草。", ja: "出張費50万ウォンを起案。" },
+    submitExpenseWS: { ko: "팀 워크샵 예산 800만원 기안 올려줘.", en: "Submit an ₩8M team-workshop budget proposal.", vi: "Trình ngân sách workshop ₩8M.", zh: "提交800万韩元团队研讨会预算起草。", ja: "チーム研修予算800万ウォンを起案。" },
+    submitPurchase: { ko: "모니터링 도구 300만원 구매 기안.", en: "Submit a ₩3M tooling purchase request.", vi: "Yêu cầu mua công cụ ₩3M.", zh: "提交300万韩元采购申请。", ja: "監視ツール300万ウォンの購入申請。" },
   };
 
   function t(lang, key, params) {

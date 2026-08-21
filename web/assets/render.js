@@ -9,6 +9,8 @@ const OHMY_RENDER = (function () {
   function pctv(n) { return (Math.round(n * 10) / 10) + "%"; }
   function fig(s) { return '<span class="fig">' + s + "</span>"; }
   function ins(s) { return '<p class="insight">💡 ' + s + "</p>"; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function krw(n) { return "₩" + Number(n).toLocaleString("en-US"); }
   function row(cells, cls) { return '<tr class="' + (cls || "") + '">' + cells.map(function (c, i) { return "<td" + (i ? ' class="n"' : "") + ">" + c + "</td>"; }).join("") + "</tr>"; }
   function table(rows) { return '<div class="tw"><table class="stmt">' + rows.join("") + "</table></div>"; }
   function ent(lang, c) { return I18N.ent(lang, c); }
@@ -108,13 +110,25 @@ const OHMY_RENDER = (function () {
       /* ---------- HR ---------- */
       case "leaveBalance":
         return "<p>" + (d.self ? "" : d.name + " · ") + L("r_annual") + " " + fig((d.remaining).toFixed(1) + L("r_days")) + " <span class='dim sm'>(" + L("r_of", { e: d.entitled, c: d.carried, u: d.used, p: d.pending }) + ")</span></p>";
-      case "createLeave":
-        return "<p>" + L("r_created", { date: d.date, type: L("r_annual"), days: d.days }) + " " + pill(lang, "PENDING") + "</p><p>" + L("r_approver") + ": " + d.approver + " (" + I18N.role(lang, d.approverRole) + ") · <span class='mono'>" + d.id + "</span></p><p class='dim sm'>" + L("r_reserved", { days: d.days }) + "</p>";
-      case "createLeaveDup": return "<p>" + L("r_reserved", { days: 1 }) + " <span class='mono'>" + d.id + "</span></p>";
+      case "draftSubmitted": {
+        const amt = d.amount ? krw(d.amount) : L("dr_noamount");
+        const line = d.line.map(function (s, i) { return (i + 1) + ". " + s.name + "(" + I18N.role(lang, s.role) + ")"; }).join("  →  ");
+        return "<p><b>" + L("dr_submitted") + "</b> · " + L("dt_" + d.type) + (d.title ? " · " + esc(d.title) : "") + " " + pill(lang, "PENDING") + "</p>" +
+          "<p>" + L("dr_amount") + ": " + fig(amt) + "</p>" +
+          "<p>" + L("dr_line") + ": " + line + " · <span class='mono'>" + d.id + "</span></p>" +
+          ins(L("ins_draft", { n: d.line.length, first: d.line[0].name }));
+      }
       case "pending":
-        return d.rows.length ? "<p>" + L("r_pending_n", { n: d.rows.length }) + "</p>" + d.rows.map(function (r) { return "<p>• " + r.requester + " · " + r.date + " · <span class='mono'>" + r.id + "</span> <button class='mini' data-approve='" + r.id + "'>" + L("approve") + "</button> <button class='mini ghost' data-reject='" + r.id + "'>" + L("reject") + "</button></p>"; }).join("") : "<p>" + L("no_pending") + "</p>";
-      case "approve": return "<p>" + L("r_approved_msg", { name: d.name, type: L("r_annual"), date: d.date }) + "</p>";
-      case "reject": return "<p>" + L("r_rejected_msg", { name: d.name }) + "</p>";
+        return d.rows.length ? "<p>" + L("r_pending_n", { n: d.rows.length }) + "</p>" + d.rows.map(function (r) {
+          return "<p>• " + L("dt_" + r.type) + " — " + esc(r.title) + (r.amount ? " (" + krw(r.amount) + ")" : "") + " · " + r.requester +
+            " · " + L("dr_step", { cur: r.step, tot: r.steps }) + " <span class='mono'>" + r.id + "</span> " +
+            "<button class='mini' data-approve='" + r.id + "'>" + L("approve") + "</button> <button class='mini ghost' data-reject='" + r.id + "'>" + L("reject") + "</button></p>";
+        }).join("") : "<p>" + L("no_pending") + "</p>";
+      case "approve":
+        return d.final
+          ? "<p>✅ " + L("dr_approved_final", { title: esc(d.title || L("dt_" + d.type)) }) + "</p>"
+          : "<p>" + L("dr_approved_step", { title: esc(d.title || L("dt_" + d.type)), next: d.next, role: I18N.role(lang, d.nextRole) }) + "</p>";
+      case "reject": return "<p>" + L("dr_rejected", { title: esc(d.title || L("dt_" + d.type)) }) + "</p>";
       case "leaveUsage": {
         const Rr = [row([L("lu_dept"), L("lu_emp"), L("lu_ent"), L("lu_used"), L("lu_rate")], "sub")];
         d.rows.forEach(function (r) { Rr.push(row([I18N.dept(lang, r.deptKey), r.employees, r.entitled, r.used, r.rate + "%"])); });

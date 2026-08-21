@@ -73,8 +73,8 @@
     chipsEl.innerHTML = "";
     I18N.personaChips(OHMY.emp(current).role).forEach(function (c) {
       var b = document.createElement("button");
-      b.className = "chip"; b.innerHTML = '<span class="tag">' + c.cat + "</span>" + I18N.chipLabel(lang, c.intent);
-      b.addEventListener("click", function () { runIntent(c.intent, c.args, b); });
+      b.className = "chip"; b.innerHTML = '<span class="tag">' + c.cat + "</span>" + I18N.chipLabel(lang, c.labelKey || c.intent);
+      b.addEventListener("click", function () { runIntent(c.intent, c.args, b, I18N.chipLabel(lang, c.labelKey || c.intent)); });
       chipsEl.appendChild(b);
     });
   }
@@ -164,11 +164,12 @@
   function renderApprovalsPanel() {
     var el = document.getElementById("appr");
     if (!OHMY.can(current, "APPROVAL_APPROVE")) { el.innerHTML = '<span class="dim sm">' + t(lang, "no_perm_role") + "</span>"; return; }
-    var mine = OHMY.approvals().filter(function (x) { return x.approverNo === current && x.status === "PENDING"; });
+    var mine = OHMY.pendingDrafts(current);
     if (!mine.length) { el.innerHTML = '<span class="dim sm">' + t(lang, "no_pending") + "</span>"; return; }
-    el.innerHTML = mine.map(function (x) {
-      return '<div class="ev"><span class="who">' + OHMY.emp(x.requesterNo).name + '</span><span class="m">' + x.date + "</span> " +
-        '<button class="mini" data-approve="' + x.id + '">' + t(lang, "approve") + '</button> <button class="mini ghost" data-reject="' + x.id + '">' + t(lang, "reject") + "</button></div>";
+    el.innerHTML = mine.map(function (dr) {
+      var amt = dr.amount ? " · ₩" + Number(dr.amount).toLocaleString("en-US") : "";
+      return '<div class="ev"><span class="who">' + OHMY.emp(dr.requesterNo).name + '</span><span class="m">' + t(lang, "dt_" + dr.type) + amt + "</span> " +
+        '<button class="mini" data-approve="' + dr.id + '">' + t(lang, "approve") + '</button> <button class="mini ghost" data-reject="' + dr.id + '">' + t(lang, "reject") + "</button></div>";
     }).join("");
   }
   function renderFeed() {
