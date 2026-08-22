@@ -31,9 +31,49 @@ const OHMY = (function () {
     if (!chain.length) chain = [PID.CEO];
     return chain.map(function (a, i) { return { no: i + 1, approverNo: a, status: "PENDING" }; });
   }
+  // Build a full approval DOCUMENT (기안서) — not just a title. This is the
+  // "AI drafts the form for you" value: one request -> a complete, structured doc.
+  let docSeq = 1;
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function buildDoc(type, reqNo, amount, title) {
+    const e = emp(reqNo), d = new Date();
+    const docNo = "" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + (docSeq++);
+    const due = new Date(); due.setDate(due.getDate() + 7);
+    const dueStr = due.getFullYear() + "." + (due.getMonth() + 1) + "." + due.getDate();
+    const doc = { docNo: docNo, type: type, title: title || "", drafter: { name: e.name, dept: e.dept, role: e.role }, recipient: "", rows: [], details: [], attachment: "" };
+    if (type === "EXPENSE") {
+      doc.recipient = "재무팀 (Finance)";
+      doc.rows = [
+        { k: "fld_payee", v: "OMH 협력사 (샘플)" }, { k: "fld_account", v: "신한 ***-***-****" },
+        { k: "fld_amount", v: amount, money: true }, { k: "fld_due", v: dueStr },
+      ];
+      doc.details = ["1. 정산 보고", " - 사전 수령: HKD 710 · TWD 4,776", " - 사용 금액: HKD 361 · TWD 5,870",
+        "2. 정산 결과", " - 홍콩달러 반납: HKD 349 / 대만달러 반납: 없음",
+        "3. 기타: 개인 현금/카드 사용분 지급 요청 (로밍비: 중국·홍콩·대만)", "", "위 금액을 송금 요청하오니 결재 바랍니다."];
+      doc.attachment = "출장비용정산서_v3.xlsx";
+    } else if (type === "TRIP") {
+      doc.recipient = "운영팀 / 재무팀";
+      doc.rows = [{ k: "fld_dest", v: "부산 (2박 3일)" }, { k: "fld_period", v: dueStr + " ~" }, { k: "fld_purpose", v: "파트너 미팅 및 현장 점검" }, { k: "fld_amount", v: amount, money: true }];
+      doc.details = ["1. 출장 목적: 파트너 미팅 및 현장 점검", "2. 예상 경비: 교통·숙박·식대 포함", "3. 동행: 없음", "", "위와 같이 출장을 신청하오니 결재 바랍니다."];
+      doc.attachment = "출장계획서.pdf";
+    } else if (type === "PURCHASE") {
+      doc.recipient = "재무팀 / 구매담당";
+      doc.rows = [{ k: "fld_item", v: "채널 모니터링 도구 라이선스 (연간)" }, { k: "fld_qty", v: "5" }, { k: "fld_supplier", v: "소프트웨어 벤더 (샘플)" }, { k: "fld_amount", v: amount, money: true }];
+      doc.details = ["1. 구매 사유: 채널 모니터링 자동화", "2. 견적 첨부 · 대체안 검토 완료", "", "위와 같이 구매를 요청하오니 결재 바랍니다."];
+      doc.attachment = "견적서.pdf";
+    } else if (type === "LEAVE") {
+      doc.recipient = "팀장";
+      doc.rows = [{ k: "fld_ltype", v: "연차" }, { k: "fld_period", v: "2026-08-20 (1일)" }];
+      doc.details = ["사유: 개인 사유"];
+    } else {
+      doc.recipient = "관련 부서";
+      doc.details = [title || "(내용)"];
+    }
+    return doc;
+  }
   function newDraft(reqNo, type, title, amount, days) {
     const id = "DR-" + String(seq++).padStart(3, "0");
-    const dr = { id: id, requesterNo: reqNo, type: type, title: title || "", amount: amount || 0, days: days || 0, steps: routeApprovers(reqNo, amount || 0), currentStep: 1, status: "PENDING", createdAt: new Date() };
+    const dr = { id: id, requesterNo: reqNo, type: type, title: title || "", amount: amount || 0, days: days || 0, doc: buildDoc(type, reqNo, amount || 0, title), steps: routeApprovers(reqNo, amount || 0), currentStep: 1, status: "PENDING", createdAt: new Date() };
     drafts.push(dr);
     if (type === "LEAVE" && days) emp(reqNo).leave[2026].pending += days;
     return dr;
@@ -141,7 +181,7 @@ const OHMY = (function () {
       if (type === "LEAVE" && days) { const l = emp(a).leave[2026]; if (l.entitled + 2 - l.used - l.pending < days) return deny(a, "submit_draft", "잔여 연차 부족"); }
       const dr = newDraft(a, type, title, amount, days);
       const line = dr.steps.map(function (s) { return { name: emp(s.approverNo).name, role: emp(s.approverNo).role }; });
-      return ok(a, "submit_draft", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: type, title: title, amount: amount, days: days, line: line });
+      return ok(a, "submit_draft", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: type, title: title, amount: amount, days: days, doc: dr.doc, line: line });
     },
     createLeave: function (a) { return API.submitDraft(a, { type: "LEAVE", days: 1, title: "연차 1일 · 2026-08-20" }); },
     pending: function (a) {

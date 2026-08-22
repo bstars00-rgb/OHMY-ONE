@@ -282,7 +282,31 @@ const I18N = (function () {
     dr_approved_final: { ko: "‘{title}’ 기안 최종 승인 완료.", en: "'{title}' fully approved.", vi: "'{title}' đã duyệt hoàn toàn.", zh: "‘{title}’ 已最终批准。", ja: "『{title}』最終承認完了。" },
     dr_approved_step: { ko: "‘{title}’ 승인 — 다음 결재: {next}({role}).", en: "'{title}' approved — next: {next} ({role}).", vi: "'{title}' đã duyệt — kế: {next} ({role}).", zh: "‘{title}’ 已批准 — 下一步：{next}（{role}）。", ja: "『{title}』承認 — 次の決裁: {next}（{role}）。" },
     dr_rejected: { ko: "‘{title}’ 기안이 반려되었습니다.", en: "'{title}' was rejected.", vi: "'{title}' bị từ chối.", zh: "‘{title}’ 已驳回。", ja: "『{title}』は却下されました。" },
-    ins_draft: { ko: "{n}단계 결재선으로 라우팅됨. 다음 결재자는 {first}입니다 (금액에 따라 결재선이 자동 결정).", en: "Routed to a {n}-step approval line; first approver is {first} (line auto-set by amount).", vi: "Định tuyến {n} bước; người duyệt đầu là {first}.", zh: "路由至{n}级审批线，首位审批人{first}（金额自动决定审批线）。", ja: "{n}段階の決裁ラインへ。最初の決裁者は{first}（金額により自動設定）。" },
+    ins_draft: { ko: "AI가 결재 문서를 작성해 상신했습니다. {n}단계 결재선 · 다음 결재자 {first} (금액에 따라 결재선 자동 결정).", en: "AI drafted the full document and submitted it. {n}-step line; next approver {first} (line auto-set by amount).", vi: "AI đã soạn văn bản và trình. {n} bước; kế tiếp {first}.", zh: "AI 已生成完整单据并提交。{n}级审批线，下一位 {first}（金额自动决定）。", ja: "AIが決裁文書を作成し提出。{n}段階、次は{first}（金額により自動設定）。" },
+
+    // e-approval document form (기안서 양식)
+    doc_EXPENSE: { ko: "지 출 결 의 서", en: "Expense Disbursement", vi: "Đề nghị chi", zh: "支出决议书", ja: "支出決議書" },
+    doc_TRIP: { ko: "출 장 신 청 서", en: "Trip Request", vi: "Đơn công tác", zh: "出差申请书", ja: "出張申請書" },
+    doc_PURCHASE: { ko: "구 매 요 청 서", en: "Purchase Request", vi: "Đơn mua hàng", zh: "采购申请书", ja: "購入申請書" },
+    doc_LEAVE: { ko: "휴 가 신 청 서", en: "Leave Request", vi: "Đơn nghỉ phép", zh: "休假申请书", ja: "休暇申請書" },
+    doc_GENERAL: { ko: "기 안 서", en: "Proposal", vi: "Tờ trình", zh: "起草书", ja: "起案書" },
+    fld_docno: { ko: "기안번호", en: "Doc no.", vi: "Số VB", zh: "文号", ja: "文書番号" },
+    fld_name: { ko: "성명", en: "Name", vi: "Họ tên", zh: "姓名", ja: "氏名" },
+    fld_dept: { ko: "소속", en: "Dept.", vi: "Bộ phận", zh: "部门", ja: "所属" },
+    fld_recipient: { ko: "수신참조", en: "To / Cc", vi: "Nơi nhận", zh: "收件/抄送", ja: "宛先/参照" },
+    fld_payee: { ko: "지급처", en: "Payee", vi: "Người nhận", zh: "收款方", ja: "支払先" },
+    fld_account: { ko: "지급계좌", en: "Account", vi: "Tài khoản", zh: "收款账户", ja: "振込口座" },
+    fld_amount: { ko: "금액", en: "Amount", vi: "Số tiền", zh: "金额", ja: "金額" },
+    fld_due: { ko: "지급기한", en: "Due date", vi: "Hạn chi", zh: "支付期限", ja: "支払期限" },
+    fld_details: { ko: "내역", en: "Details", vi: "Chi tiết", zh: "明细", ja: "内訳" },
+    fld_attach: { ko: "첨부파일", en: "Attachment", vi: "Tệp đính kèm", zh: "附件", ja: "添付" },
+    fld_dest: { ko: "출장지", en: "Destination", vi: "Nơi đến", zh: "出差地", ja: "出張先" },
+    fld_period: { ko: "기간", en: "Period", vi: "Thời gian", zh: "期间", ja: "期間" },
+    fld_purpose: { ko: "목적", en: "Purpose", vi: "Mục đích", zh: "目的", ja: "目的" },
+    fld_item: { ko: "품목", en: "Item", vi: "Hạng mục", zh: "品目", ja: "品目" },
+    fld_qty: { ko: "수량", en: "Qty", vi: "SL", zh: "数量", ja: "数量" },
+    fld_supplier: { ko: "공급처", en: "Supplier", vi: "Nhà cung cấp", zh: "供应商", ja: "仕入先" },
+    fld_ltype: { ko: "휴가종류", en: "Leave type", vi: "Loại phép", zh: "假别", ja: "休暇種別" },
   };
 
   // Per-persona curated question sets — each role only sees what it actually asks.
@@ -290,9 +314,9 @@ const I18N = (function () {
   const PERSONA_CHIPS = {
     STAFF: [
       { cat: "HR", intent: "leaveBalance" },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseReport", args: { type: "EXPENSE", amount: 279263, title: "선전·홍콩·대만 출장비 정산" } },
+      { cat: "결재", intent: "submitDraft", labelKey: "submitTrip", args: { type: "TRIP", amount: 500000, title: "부산 출장" } },
       { cat: "결재", intent: "createLeave" },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitTrip", args: { type: "TRIP", amount: 500000, title: "출장비 · 부산 2박" } },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseWS", args: { type: "EXPENSE", amount: 8000000, title: "팀 워크샵 예산" } },
     ],
     OPS: [
       { cat: "OPS", intent: "bookingDashboard" },
@@ -351,6 +375,7 @@ const I18N = (function () {
     submitTrip: { ko: "출장비 50만원 기안 올려줘.", en: "Submit a ₩500K travel-expense proposal.", vi: "Trình đề nghị công tác ₩500K.", zh: "提交50万韩元出差费起草。", ja: "出張費50万ウォンを起案。" },
     submitExpenseWS: { ko: "팀 워크샵 예산 800만원 기안 올려줘.", en: "Submit an ₩8M team-workshop budget proposal.", vi: "Trình ngân sách workshop ₩8M.", zh: "提交800万韩元团队研讨会预算起草。", ja: "チーム研修予算800万ウォンを起案。" },
     submitPurchase: { ko: "모니터링 도구 300만원 구매 기안.", en: "Submit a ₩3M tooling purchase request.", vi: "Yêu cầu mua công cụ ₩3M.", zh: "提交300万韩元采购申请。", ja: "監視ツール300万ウォンの購入申請。" },
+    submitExpenseReport: { ko: "출장비 정산 지출결의서 올려줘.", en: "Draft a travel-expense disbursement.", vi: "Lập đề nghị chi công tác.", zh: "起草出差费支出决议书。", ja: "出張費の支出決議書を起案。" },
   };
 
   function t(lang, key, params) {

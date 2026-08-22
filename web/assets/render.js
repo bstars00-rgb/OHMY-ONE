@@ -111,12 +111,20 @@ const OHMY_RENDER = (function () {
       case "leaveBalance":
         return "<p>" + (d.self ? "" : d.name + " · ") + L("r_annual") + " " + fig((d.remaining).toFixed(1) + L("r_days")) + " <span class='dim sm'>(" + L("r_of", { e: d.entitled, c: d.carried, u: d.used, p: d.pending }) + ")</span></p>";
       case "draftSubmitted": {
-        const amt = d.amount ? krw(d.amount) : L("dr_noamount");
-        const line = d.line.map(function (s, i) { return (i + 1) + ". " + s.name + "(" + I18N.role(lang, s.role) + ")"; }).join("  →  ");
-        return "<p><b>" + L("dr_submitted") + "</b> · " + L("dt_" + d.type) + (d.title ? " · " + esc(d.title) : "") + " " + pill(lang, "PENDING") + "</p>" +
-          "<p>" + L("dr_amount") + ": " + fig(amt) + "</p>" +
-          "<p>" + L("dr_line") + ": " + line + " · <span class='mono'>" + d.id + "</span></p>" +
-          ins(L("ins_draft", { n: d.line.length, first: d.line[0].name }));
+        const doc = d.doc, line = d.line.map(function (s, i) { return (i + 1) + ". " + s.name + "(" + I18N.role(lang, s.role) + ")"; }).join("  →  ");
+        const rows = doc.rows.map(function (r) { return "<tr><th>" + L(r.k) + "</th><td colspan='3'>" + (r.money ? fig(r.v ? krw(r.v) : L("dr_noamount")) : esc(r.v)) + "</td></tr>"; }).join("");
+        const details = doc.details.length ? "<tr><th>" + L("fld_details") + "</th><td colspan='3' class='doc-body'>" + doc.details.map(esc).join("<br>") + "</td></tr>" : "";
+        const attach = doc.attachment ? "<tr><th>" + L("fld_attach") + "</th><td colspan='3'>📎 " + esc(doc.attachment) + "</td></tr>" : "";
+        return '<div class="doc">' +
+          '<div class="doc-head"><span>' + L("fld_docno") + ": " + esc(doc.docNo) + " · " + esc(d.id) + "</span>" + pill(lang, "PENDING") + "</div>" +
+          '<div class="doc-title">' + L("doc_" + doc.type) + "</div>" +
+          '<table class="doc-tbl">' +
+          "<tr><th>" + L("fld_name") + "</th><td>" + esc(doc.drafter.name) + "</td><th>" + L("fld_dept") + "</th><td>" + I18N.dept(lang, OHMY_DATA.DEPT_NAMEKEY[doc.drafter.dept] || "op") + "</td></tr>" +
+          "<tr><th>" + L("fld_recipient") + "</th><td colspan='3'>" + esc(doc.recipient) + "</td></tr>" +
+          rows + details + attach +
+          "</table>" +
+          '<div class="doc-line"><b>' + L("dr_line") + "</b>: " + line + "</div>" +
+          "</div>" + ins(L("ins_draft", { n: d.line.length, first: d.line[0].name }));
       }
       case "pending":
         return d.rows.length ? "<p>" + L("r_pending_n", { n: d.rows.length }) + "</p>" + d.rows.map(function (r) {

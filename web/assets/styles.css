@@ -116,6 +116,15 @@ button{font-family:inherit}
 .interp{border-left:3px solid var(--accent);padding-left:11px;color:var(--text-dim);font-size:13px;margin-top:6px}
 .insight{margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--accent-wash);border:1px solid var(--accent);color:var(--text);font-size:13px;line-height:1.5}
 .tw{overflow-x:auto}
+/* 기안 문서 양식 */
+.doc{border:1px solid var(--border-strong);border-radius:8px;overflow:hidden;background:var(--surface)}
+.doc-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;background:var(--surface-2);font-size:11px;color:var(--text-dim);font-family:var(--mono)}
+.doc-title{text-align:center;font-weight:800;font-size:16px;padding:11px 8px;letter-spacing:.15em;border-bottom:2px solid var(--border-strong)}
+.doc-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.doc-tbl th,.doc-tbl td{border:1px solid var(--border);padding:7px 9px;text-align:left;vertical-align:top}
+.doc-tbl th{background:var(--surface-2);color:var(--text-dim);font-weight:600;white-space:nowrap}
+.doc-body{white-space:pre-wrap;line-height:1.75}
+.doc-line{padding:9px 10px;font-size:12.5px;border-top:1px solid var(--border);background:var(--surface-2)}
 .msg.deny{border-color:var(--deny)} .msg.deny .q{background:var(--deny-wash)}
 .msg.crit{border-color:var(--warn)} .msg.crit .q{background:var(--warn-wash)}
 .stmt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:4px}
