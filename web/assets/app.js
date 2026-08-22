@@ -146,13 +146,44 @@
   }
   function prepend(m) { if (outEl.firstChild && outEl.firstChild.className === "empty") outEl.innerHTML = ""; outEl.insertBefore(m, outEl.firstChild); }
 
-  /* approve/reject delegation */
+  /* approve/reject + draft-form delegation */
   document.addEventListener("click", function (ev) {
-    var idA = ev.target.getAttribute && ev.target.getAttribute("data-approve");
-    var idR = ev.target.getAttribute && ev.target.getAttribute("data-reject");
-    if (idA) { renderMsg(t(lang, "approve"), OHMY.call(current, "approve", idA)); after(); }
-    if (idR) { renderMsg(t(lang, "reject"), OHMY.call(current, "reject", idR)); after(); }
+    var el = ev.target.closest && ev.target.closest("[data-approve],[data-reject],[data-add-approver],[data-del-approver],[data-submit-draft],[data-cancel-draft]");
+    if (!el) return;
+    var idA = el.getAttribute("data-approve"), idR = el.getAttribute("data-reject");
+    if (idA != null) { renderMsg(t(lang, "approve"), OHMY.call(current, "approve", idA)); after(); return; }
+    if (idR != null) { renderMsg(t(lang, "reject"), OHMY.call(current, "reject", idR)); after(); return; }
+    if (el.hasAttribute("data-add-approver")) {
+      var line = el.closest("td").querySelector("[data-appr-line]"), tmpl = line.querySelector(".appr-row");
+      if (tmpl) { var clone = tmpl.cloneNode(true); var s = clone.querySelector("select"); if (s) s.selectedIndex = 0; line.appendChild(clone); renumber(line); }
+      return;
+    }
+    if (el.hasAttribute("data-del-approver")) {
+      var row = el.closest(".appr-row"), ln = row.parentNode;
+      if (ln.querySelectorAll(".appr-row").length > 1) { row.remove(); renumber(ln); }
+      return;
+    }
+    if (el.hasAttribute("data-cancel-draft")) { var m = el.closest(".msg"); if (m) m.remove(); return; }
+    if (el.hasAttribute("data-submit-draft")) {
+      var form = el.closest(".draft-form");
+      if (form.getAttribute("data-submitted")) return;
+      var res = OHMY.call(current, "submitFinal", collectForm(form));
+      if (res && res.ok) {
+        form.setAttribute("data-submitted", "1");
+        [].forEach.call(form.querySelectorAll("input,textarea,select,button"), function (x) { x.disabled = true; });
+        el.textContent = t(lang, "btn_submitted");
+      }
+      renderMsg(t(lang, "submit_done_q"), res); after();
+      return;
+    }
   });
+  function renumber(line) { [].forEach.call(line.querySelectorAll(".appr-row .stepno"), function (s, i) { s.textContent = i + 1; }); }
+  function collectForm(form) {
+    var g = function (f) { var e = form.querySelector('[data-f="' + f + '"]'); return e ? e.value : ""; };
+    var cc = [].filter.call(form.querySelectorAll('[data-f="cc"] option'), function (o) { return o.selected; }).map(function (o) { return o.value; });
+    var approvers = [].map.call(form.querySelectorAll("[data-appr]"), function (s) { return s.value; }).filter(Boolean);
+    return { type: form.getAttribute("data-type"), title: g("title"), payee: g("payee"), account: g("account"), amount: parseInt(g("amount") || "0", 10) || 0, due: g("due"), details: g("details"), attachment: g("attachment"), cc: cc, approvers: approvers };
+  }
   function after() { renderPerms(); renderApprovalsPanel(); renderFeed(); if (!views.audit.classList.contains("hidden")) renderAudit(); }
 
   /* panels */

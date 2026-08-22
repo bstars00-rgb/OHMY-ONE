@@ -31,52 +31,58 @@ const OHMY = (function () {
     if (!chain.length) chain = [PID.CEO];
     return chain.map(function (a, i) { return { no: i + 1, approverNo: a, status: "PENDING" }; });
   }
-  // Build a full approval DOCUMENT (기안서) — not just a title. This is the
-  // "AI drafts the form for you" value: one request -> a complete, structured doc.
   let docSeq = 1;
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
-  function buildDoc(type, reqNo, amount, title) {
-    const e = emp(reqNo), d = new Date();
-    const docNo = "" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + (docSeq++);
-    const due = new Date(); due.setDate(due.getDate() + 7);
-    const dueStr = due.getFullYear() + "." + (due.getMonth() + 1) + "." + due.getDate();
-    const doc = { docNo: docNo, type: type, title: title || "", drafter: { name: e.name, dept: e.dept, role: e.role }, recipient: "", rows: [], details: [], attachment: "" };
+  function docNoGen() { const d = new Date(); return "" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + (docSeq++); }
+  function dueStr7() { const due = new Date(); due.setDate(due.getDate() + 7); return due.getFullYear() + "." + (due.getMonth() + 1) + "." + due.getDate(); }
+
+  // Build an EDITABLE draft TEMPLATE (flat fields). The AI pre-fills it; the
+  // user edits fields, picks CC and the approval line, then hits 상신하기.
+  function buildTemplate(type, reqNo, amount, title) {
+    const e = emp(reqNo);
+    const tpl = { type: type, title: title || "", drafter: { name: e.name, dept: e.dept, role: e.role }, payee: "", account: "", amount: amount || 0, due: dueStr7(), details: "", attachment: "" };
     if (type === "EXPENSE") {
-      doc.recipient = "재무팀 (Finance)";
-      doc.rows = [
-        { k: "fld_payee", v: "OMH 협력사 (샘플)" }, { k: "fld_account", v: "신한 ***-***-****" },
-        { k: "fld_amount", v: amount, money: true }, { k: "fld_due", v: dueStr },
-      ];
-      doc.details = ["1. 정산 보고", " - 사전 수령: HKD 710 · TWD 4,776", " - 사용 금액: HKD 361 · TWD 5,870",
-        "2. 정산 결과", " - 홍콩달러 반납: HKD 349 / 대만달러 반납: 없음",
-        "3. 기타: 개인 현금/카드 사용분 지급 요청 (로밍비: 중국·홍콩·대만)", "", "위 금액을 송금 요청하오니 결재 바랍니다."];
-      doc.attachment = "출장비용정산서_v3.xlsx";
+      tpl.payee = "OMH 협력사 (샘플)"; tpl.account = "신한 ***-***-****";
+      tpl.details = "1. 정산 보고\n - 사전 수령: HKD 710 · TWD 4,776\n - 사용 금액: HKD 361 · TWD 5,870\n2. 정산 결과\n - 홍콩달러 반납: HKD 349 / 대만달러 반납: 없음\n3. 기타: 개인 현금/카드 사용분 지급 요청\n위 금액을 송금 요청하오니 결재 바랍니다.";
+      tpl.attachment = "출장비용정산서_v3.xlsx";
     } else if (type === "TRIP") {
-      doc.recipient = "운영팀 / 재무팀";
-      doc.rows = [{ k: "fld_dest", v: "부산 (2박 3일)" }, { k: "fld_period", v: dueStr + " ~" }, { k: "fld_purpose", v: "파트너 미팅 및 현장 점검" }, { k: "fld_amount", v: amount, money: true }];
-      doc.details = ["1. 출장 목적: 파트너 미팅 및 현장 점검", "2. 예상 경비: 교통·숙박·식대 포함", "3. 동행: 없음", "", "위와 같이 출장을 신청하오니 결재 바랍니다."];
-      doc.attachment = "출장계획서.pdf";
+      tpl.details = "1. 출장지: 부산 (2박 3일)\n2. 목적: 파트너 미팅 및 현장 점검\n3. 예상 경비: 교통·숙박·식대 포함\n4. 동행: 없음";
+      tpl.attachment = "출장계획서.pdf";
     } else if (type === "PURCHASE") {
-      doc.recipient = "재무팀 / 구매담당";
-      doc.rows = [{ k: "fld_item", v: "채널 모니터링 도구 라이선스 (연간)" }, { k: "fld_qty", v: "5" }, { k: "fld_supplier", v: "소프트웨어 벤더 (샘플)" }, { k: "fld_amount", v: amount, money: true }];
-      doc.details = ["1. 구매 사유: 채널 모니터링 자동화", "2. 견적 첨부 · 대체안 검토 완료", "", "위와 같이 구매를 요청하오니 결재 바랍니다."];
-      doc.attachment = "견적서.pdf";
+      tpl.payee = "소프트웨어 벤더 (샘플)";
+      tpl.details = "1. 품목: 채널 모니터링 도구 라이선스 (연간) x5\n2. 구매 사유: 채널 모니터링 자동화\n3. 견적 첨부 · 대체안 검토 완료";
+      tpl.attachment = "견적서.pdf";
     } else if (type === "LEAVE") {
-      doc.recipient = "팀장";
-      doc.rows = [{ k: "fld_ltype", v: "연차" }, { k: "fld_period", v: "2026-08-20 (1일)" }];
-      doc.details = ["사유: 개인 사유"];
+      tpl.details = "휴가종류: 연차\n기간: 2026-08-20 (1일)\n사유: 개인 사유"; tpl.amount = 0;
     } else {
-      doc.recipient = "관련 부서";
-      doc.details = [title || "(내용)"];
+      tpl.details = title ? title : "(내용을 입력하세요)";
     }
-    return doc;
+    return tpl;
+  }
+  // approver candidates = employees who can approve; cc candidates = the personas
+  function approverCandidates() { return PERSONAS.filter(function (no) { return can(no, "APPROVAL_APPROVE"); }).map(function (no) { return { no: no, name: emp(no).name, role: emp(no).role }; }); }
+  function ccCandidates() { return PERSONAS.map(function (no) { return { no: no, name: emp(no).name, role: emp(no).role }; }); }
+  function suggestApprovers(reqNo, amount) { return routeApprovers(reqNo, amount || 0).map(function (s) { return s.approverNo; }); }
+
+  function newDraftFinal(reqNo, payload) {
+    const id = "DR-" + String(seq++).padStart(3, "0");
+    const drafter = { name: emp(reqNo).name, dept: emp(reqNo).dept, role: emp(reqNo).role };
+    const ccNames = (payload.cc || []).map(function (no) { return emp(no).name; }).join(", ");
+    const rows = [];
+    if (payload.payee) rows.push({ k: "fld_payee", v: payload.payee });
+    if (payload.account) rows.push({ k: "fld_account", v: payload.account });
+    rows.push({ k: "fld_amount", v: payload.amount || 0, money: true });
+    if (payload.due) rows.push({ k: "fld_due", v: payload.due });
+    const doc = { docNo: docNoGen(), type: payload.type, title: payload.title || "", drafter: drafter, recipient: ccNames || "-", rows: rows, details: (payload.details || "").split("\n"), attachment: payload.attachment || "" };
+    const approverNos = (payload.approvers && payload.approvers.length ? payload.approvers : suggestApprovers(reqNo, payload.amount)).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    const steps = approverNos.map(function (no, i) { return { no: i + 1, approverNo: no, status: "PENDING" }; });
+    const dr = { id: id, requesterNo: reqNo, type: payload.type, title: payload.title || "", amount: payload.amount || 0, days: payload.type === "LEAVE" ? 1 : 0, doc: doc, cc: payload.cc || [], steps: steps, currentStep: 1, status: "PENDING", createdAt: new Date() };
+    drafts.push(dr);
+    if (dr.type === "LEAVE") emp(reqNo).leave[2026].pending += 1;
+    return dr;
   }
   function newDraft(reqNo, type, title, amount, days) {
-    const id = "DR-" + String(seq++).padStart(3, "0");
-    const dr = { id: id, requesterNo: reqNo, type: type, title: title || "", amount: amount || 0, days: days || 0, doc: buildDoc(type, reqNo, amount || 0, title), steps: routeApprovers(reqNo, amount || 0), currentStep: 1, status: "PENDING", createdAt: new Date() };
-    drafts.push(dr);
-    if (type === "LEAVE" && days) emp(reqNo).leave[2026].pending += days;
-    return dr;
+    return newDraftFinal(reqNo, { type: type, title: title, amount: amount, payee: "", account: "", due: dueStr7(), details: buildTemplate(type, reqNo, amount, title).details, attachment: buildTemplate(type, reqNo, amount, title).attachment, cc: [], approvers: suggestApprovers(reqNo, amount) });
   }
   function currentApprover(dr) { const s = dr.steps.find(function (x) { return x.no === dr.currentStep; }); return s ? s.approverNo : null; }
   function applyDraftEffect(dr, fin) { if (dr.type === "LEAVE" && dr.days) { const l = emp(dr.requesterNo).leave[2026]; l.pending = Math.max(0, l.pending - dr.days); if (fin === "APPROVED") l.used += dr.days; } }
@@ -173,17 +179,25 @@ const OHMY = (function () {
       if (target !== a && !can(a, "HR_LEAVE_READ_ALL") && !(can(a, "HR_LEAVE_READ_TEAM") && approverOf(target) === a)) return deny(a, "get_leave_balance", "HR_LEAVE_READ_TEAM/ALL");
       const e = emp(target), l = e.leave[2026]; return ok(a, "get_leave_balance", "HR_LEAVE_READ_SELF", "LEAVE_BALANCE_VIEWED", "leaveBalance", { self: target === a, name: e.name, entitled: l.entitled, carried: 2, used: l.used, pending: l.pending, remaining: l.entitled + 2 - l.used - l.pending });
     },
-    // 기안 상신 (any proposal; cost optional; amount drives the approval chain)
-    submitDraft: function (a, args) {
-      const type = (args && args.type) || "GENERAL", amount = (args && args.amount) || 0;
-      const days = (args && args.days) || (type === "LEAVE" ? 1 : 0);
-      const title = (args && args.title) || "";
-      if (type === "LEAVE" && days) { const l = emp(a).leave[2026]; if (l.entitled + 2 - l.used - l.pending < days) return deny(a, "submit_draft", "잔여 연차 부족"); }
-      const dr = newDraft(a, type, title, amount, days);
-      const line = dr.steps.map(function (s) { return { name: emp(s.approverNo).name, role: emp(s.approverNo).role }; });
-      return ok(a, "submit_draft", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: type, title: title, amount: amount, days: days, doc: dr.doc, line: line });
+    // 기안 작성: AI가 편집 가능한 양식을 준비 (아직 상신 아님)
+    prepareDraft: function (a, args) {
+      const type = (args && args.type) || "GENERAL", amount = (args && args.amount) || 0, title = (args && args.title) || "";
+      const tpl = buildTemplate(type, a, amount, title);
+      return ok(a, "prepare_draft", "self", "DRAFT_DRAFTED", "draftForm", { type: type, tpl: tpl, suggested: suggestApprovers(a, amount), approvers: approverCandidates(), cc: ccCandidates() });
     },
-    createLeave: function (a) { return API.submitDraft(a, { type: "LEAVE", days: 1, title: "연차 1일 · 2026-08-20" }); },
+    // 최종 상신: 사용자가 수정한 값 + 참조 + 결재선으로 실제 기안 생성
+    submitFinal: function (a, payload) {
+      if ((payload.type || "GENERAL") === "LEAVE") { const l = emp(a).leave[2026]; if (l.entitled + 2 - l.used - l.pending < 1) return deny(a, "submit_draft", "잔여 연차 부족"); }
+      const dr = newDraftFinal(a, payload);
+      const line = dr.steps.map(function (s) { return { name: emp(s.approverNo).name, role: emp(s.approverNo).role }; });
+      return ok(a, "submit_draft", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: dr.type, amount: dr.amount, doc: dr.doc, line: line });
+    },
+    createLeave: function (a) {
+      const l = emp(a).leave[2026]; if (l.entitled + 2 - l.used - l.pending < 1) return deny(a, "submit_draft", "잔여 연차 부족");
+      const dr = newDraft(a, "LEAVE", "연차 1일 · 2026-08-20", 0, 1);
+      const line = dr.steps.map(function (s) { return { name: emp(s.approverNo).name, role: emp(s.approverNo).role }; });
+      return ok(a, "create_leave_request", "self", "DRAFT_SUBMITTED", "draftSubmitted", { id: dr.id, type: "LEAVE", amount: 0, doc: dr.doc, line: line });
+    },
     pending: function (a) {
       if (!can(a, "APPROVAL_APPROVE") && !can(a, "APPROVAL_READ")) return deny(a, "get_my_pending_approvals", "APPROVAL_APPROVE");
       const rows = drafts.filter(function (dr) { return dr.status === "PENDING" && currentApprover(dr) === a; }).map(function (dr) { return { id: dr.id, requester: emp(dr.requesterNo).name, type: dr.type, title: dr.title, amount: dr.amount, step: dr.currentStep, steps: dr.steps.length }; });
@@ -260,7 +274,7 @@ const OHMY = (function () {
     if (any("연차", "휴가", "leave", "有給", "年假", "phép") && any("분석", "usage", "分析", "phân tích")) return { intent: "leaveUsage", args: { entity: entity || "OMH_VN", year: year || 2025 } };
     if (any("기안", "상신", "품의", "올려", "결재", "draft", "proposal", "đề xuất", "起案", "稟議", "申请", "报批")) {
       var dtype = any("출장", "trip", "công tác", "出張", "出差") ? "TRIP" : any("경비", "지출", "expense", "chi phí", "経費", "费用") ? "EXPENSE" : any("구매", "purchase", "mua", "購入", "采购") ? "PURCHASE" : any("연차", "휴가", "leave", "有給", "年假", "phép") ? "LEAVE" : "GENERAL";
-      return { intent: "submitDraft", args: { type: dtype, amount: parseAmount(text), title: (text || "").trim().slice(0, 40), days: dtype === "LEAVE" ? 1 : 0 } };
+      return { intent: "prepareDraft", args: { type: dtype, amount: parseAmount(text), title: (text || "").trim().slice(0, 40) } };
     }
     if (any("연차", "leave", "有給", "phép") && any("남", "잔여", "remain", "còn", "残", "剩")) return { intent: "leaveBalance" };
     if (any("연차", "휴가", "leave", "有給") && any("신청", "쓸", "take", "nghỉ", "请")) return { intent: "createLeave" };

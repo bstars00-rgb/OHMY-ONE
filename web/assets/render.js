@@ -11,6 +11,7 @@ const OHMY_RENDER = (function () {
   function ins(s) { return '<p class="insight">💡 ' + s + "</p>"; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function krw(n) { return "₩" + Number(n).toLocaleString("en-US"); }
+  function inRow(label, field, value) { return "<tr><th>" + label + '</th><td><input data-f="' + field + '" value="' + esc(value) + '"></td></tr>'; }
   function row(cells, cls) { return '<tr class="' + (cls || "") + '">' + cells.map(function (c, i) { return "<td" + (i ? ' class="n"' : "") + ">" + c + "</td>"; }).join("") + "</tr>"; }
   function table(rows) { return '<div class="tw"><table class="stmt">' + rows.join("") + "</table></div>"; }
   function ent(lang, c) { return I18N.ent(lang, c); }
@@ -121,10 +122,32 @@ const OHMY_RENDER = (function () {
           '<table class="doc-tbl">' +
           "<tr><th>" + L("fld_name") + "</th><td>" + esc(doc.drafter.name) + "</td><th>" + L("fld_dept") + "</th><td>" + I18N.dept(lang, OHMY_DATA.DEPT_NAMEKEY[doc.drafter.dept] || "op") + "</td></tr>" +
           "<tr><th>" + L("fld_recipient") + "</th><td colspan='3'>" + esc(doc.recipient) + "</td></tr>" +
+          (doc.title ? "<tr><th>" + L("fld_subject") + "</th><td colspan='3'><b>" + esc(doc.title) + "</b></td></tr>" : "") +
           rows + details + attach +
           "</table>" +
           '<div class="doc-line"><b>' + L("dr_line") + "</b>: " + line + "</div>" +
           "</div>" + ins(L("ins_draft", { n: d.line.length, first: d.line[0].name }));
+      }
+      case "draftForm": {
+        const tpl = d.tpl, type = d.type, payeeRow = (type === "EXPENSE" || type === "PURCHASE"), moneyRow = (type !== "LEAVE");
+        const ccOpts = d.cc.map(function (p) { return '<option value="' + p.no + '">' + esc(p.name) + " (" + I18N.role(lang, p.role) + ")</option>"; }).join("");
+        const apprOpts = function (sel) { return d.approvers.map(function (p) { return '<option value="' + p.no + '"' + (p.no === sel ? " selected" : "") + ">" + esc(p.name) + " (" + I18N.role(lang, p.role) + ")</option>"; }).join(""); };
+        const apprRows = d.suggested.map(function (no, i) { return '<div class="appr-row"><span class="stepno">' + (i + 1) + '</span><select data-appr>' + apprOpts(no) + '</select> <button type="button" class="mini ghost xs" data-del-approver>✕</button></div>'; }).join("");
+        let rows = "<tr><th>" + L("fld_name") + "</th><td>" + esc(tpl.drafter.name) + " · " + I18N.dept(lang, OHMY_DATA.DEPT_NAMEKEY[tpl.drafter.dept] || "op") + "</td></tr>";
+        rows += inRow(L("fld_subject"), "title", tpl.title);
+        if (payeeRow) rows += inRow(L("fld_payee"), "payee", tpl.payee);
+        if (payeeRow) rows += inRow(L("fld_account"), "account", tpl.account);
+        if (moneyRow) rows += "<tr><th>" + L("fld_amount") + '</th><td><input class="fin" data-f="amount" type="number" value="' + (tpl.amount || 0) + '"> 원</td></tr>';
+        rows += inRow(L("fld_due"), "due", tpl.due);
+        rows += "<tr><th>" + L("fld_details") + '</th><td><textarea data-f="details" rows="6">' + esc(tpl.details) + "</textarea></td></tr>";
+        rows += inRow(L("fld_attach"), "attachment", tpl.attachment);
+        rows += "<tr><th>" + L("fld_cc") + '</th><td><select data-f="cc" multiple size="4">' + ccOpts + '</select><div class="dim sm">' + L("cc_hint") + "</div></td></tr>";
+        rows += "<tr><th>" + L("dr_line") + '</th><td><div class="appr-line" data-appr-line>' + apprRows + '</div><button type="button" class="mini ghost xs" data-add-approver>+ ' + L("add_approver") + '</button><div class="dim sm">' + L("line_hint") + "</div></td></tr>";
+        return '<div class="draft-form" data-type="' + type + '">' +
+          '<div class="doc-title">' + L("doc_" + type) + ' <span class="dim sm">(' + L("form_edit") + ")</span></div>" +
+          '<table class="doc-tbl form-tbl">' + rows + "</table>" +
+          '<div class="form-actions"><button type="button" class="mini" data-submit-draft>' + L("btn_submit") + '</button> <button type="button" class="mini ghost" data-cancel-draft>' + L("btn_cancel") + "</button></div>" +
+          "</div><p class='dim sm' style='margin-top:6px'>" + L("form_note") + "</p>";
       }
       case "pending":
         return d.rows.length ? "<p>" + L("r_pending_n", { n: d.rows.length }) + "</p>" + d.rows.map(function (r) {

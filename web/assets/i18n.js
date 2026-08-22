@@ -307,6 +307,17 @@ const I18N = (function () {
     fld_qty: { ko: "수량", en: "Qty", vi: "SL", zh: "数量", ja: "数量" },
     fld_supplier: { ko: "공급처", en: "Supplier", vi: "Nhà cung cấp", zh: "供应商", ja: "仕入先" },
     fld_ltype: { ko: "휴가종류", en: "Leave type", vi: "Loại phép", zh: "假别", ja: "休暇種別" },
+    fld_subject: { ko: "제목", en: "Subject", vi: "Tiêu đề", zh: "标题", ja: "件名" },
+    fld_cc: { ko: "참조(CC)", en: "Reference (CC)", vi: "Tham chiếu (CC)", zh: "抄送(CC)", ja: "参照(CC)" },
+    cc_hint: { ko: "여러 명 선택 가능 (Ctrl/⌘+클릭)", en: "Select multiple (Ctrl/⌘+click)", vi: "Chọn nhiều (Ctrl/⌘)", zh: "可多选（Ctrl/⌘+点击）", ja: "複数選択可（Ctrl/⌘+クリック）" },
+    line_hint: { ko: "결재선을 추가·삭제하거나 결재자를 바꿀 수 있습니다.", en: "Add/remove steps or change approvers.", vi: "Thêm/xóa bước hoặc đổi người duyệt.", zh: "可增删步骤或更换审批人。", ja: "段階の追加・削除、決裁者の変更が可能。" },
+    add_approver: { ko: "결재자 추가", en: "Add approver", vi: "Thêm người duyệt", zh: "添加审批人", ja: "決裁者を追加" },
+    form_edit: { ko: "작성/수정", en: "draft — editable", vi: "soạn/sửa", zh: "起草/编辑", ja: "作成/編集" },
+    form_note: { ko: "AI가 초안을 채워 드렸습니다. 내용·참조·결재선을 수정한 뒤 [상신하기]를 누르세요.", en: "AI pre-filled the draft. Edit fields, CC and the approval line, then press Submit.", vi: "AI đã điền sẵn. Sửa nội dung, CC, tuyến duyệt rồi bấm Trình.", zh: "AI 已预填。编辑内容、抄送和审批线后点“提交”。", ja: "AIが下書きを作成しました。内容・参照・決裁ラインを編集して[提出]を押してください。" },
+    btn_submit: { ko: "상신하기", en: "Submit", vi: "Trình duyệt", zh: "提交上报", ja: "提出する" },
+    btn_submitted: { ko: "상신됨 ✓", en: "Submitted ✓", vi: "Đã trình ✓", zh: "已提交 ✓", ja: "提出済 ✓" },
+    btn_cancel: { ko: "취소", en: "Cancel", vi: "Hủy", zh: "取消", ja: "取消" },
+    submit_done_q: { ko: "기안 상신하기", en: "Submit proposal", vi: "Trình đề xuất", zh: "提交起草", ja: "起案を提出" },
   };
 
   // Per-persona curated question sets — each role only sees what it actually asks.
@@ -314,8 +325,8 @@ const I18N = (function () {
   const PERSONA_CHIPS = {
     STAFF: [
       { cat: "HR", intent: "leaveBalance" },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseReport", args: { type: "EXPENSE", amount: 279263, title: "선전·홍콩·대만 출장비 정산" } },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitTrip", args: { type: "TRIP", amount: 500000, title: "부산 출장" } },
+      { cat: "결재", intent: "prepareDraft", labelKey: "submitExpenseReport", args: { type: "EXPENSE", amount: 279263, title: "선전·홍콩·대만 출장비 정산" } },
+      { cat: "결재", intent: "prepareDraft", labelKey: "submitTrip", args: { type: "TRIP", amount: 500000, title: "부산 출장" } },
       { cat: "결재", intent: "createLeave" },
     ],
     OPS: [
@@ -328,12 +339,12 @@ const I18N = (function () {
       { cat: "SALES", intent: "sellerRanking" },
       { cat: "SALES", intent: "newSellers" },
       { cat: "SALES", intent: "concentration" },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitExpenseWS", args: { type: "EXPENSE", amount: 8000000, title: "채널 세일즈 인센티브 예산" } },
+      { cat: "결재", intent: "prepareDraft", labelKey: "submitExpenseWS", args: { type: "EXPENSE", amount: 8000000, title: "채널 세일즈 인센티브 예산" } },
     ],
     SUPPLY: [
       { cat: "SUPPLY", intent: "contractMix" },
       { cat: "OPS", intent: "bookingsByCountry" },
-      { cat: "결재", intent: "submitDraft", labelKey: "submitPurchase", args: { type: "PURCHASE", amount: 3000000, title: "공급 모니터링 도구 구매" } },
+      { cat: "결재", intent: "prepareDraft", labelKey: "submitPurchase", args: { type: "PURCHASE", amount: 3000000, title: "공급 모니터링 도구 구매" } },
     ],
     FINANCE: [
       { cat: "FINANCE", intent: "settlement", args: { seller: "Agoda" } },
