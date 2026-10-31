@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>OMH HR 콘솔 + OHMY ONE AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ff6000'/><text x='50' y='70' font-size='46' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='800'>HR</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F7;--panel:#FFFFFF;--ink:#17212B;--muted:#5B6875;--line:#D9DFE5;--accent:#1F5C8B;--accent-soft:#E3EDF5;
+  --ok:#2E7D4F;--warn:#A15C00;--bad:#B3261E;--chip:#EEF1F4;--cap:#ff6000;--cap-ink:#fff;--brand:#009538;--brand-deep:#007a2e;--acc-soft:#e3f4e8;--hdr:#fff;
+  --font:"IBM Plex Sans KR","Noto Sans JP","Noto Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171C;--panel:#1A2128;--ink:#E6EBF0;--muted:#9AA7B3;--line:#2C3741;--accent:#7FB2DD;--accent-soft:#1E3346;--ok:#6CC793;--warn:#E0A84B;--bad:#F08A80;--chip:#222B33;--cap:#e65a00;--brand:#0f8a3a;--brand-deep:#0b6b2d;--acc-soft:#123821;--hdr:#131d22;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12171C;--panel:#1A2128;--ink:#E6EBF0;--muted:#9AA7B3;--line:#2C3741;--accent:#7FB2DD;--accent-soft:#1E3346;--ok:#6CC793;--warn:#E0A84B;--bad:#F08A80;--chip:#222B33;--cap:#e65a00;--brand:#0f8a3a;--brand-deep:#0b6b2d;--acc-soft:#123821;--hdr:#131d22;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 48px;display:flex;flex-direction:column;gap:16px}
+header.top{position:sticky;top:0;z-index:20;background:var(--hdr);box-shadow:0 1px 2px rgba(21,35,43,.06),0 4px 14px rgba(21,35,43,.05);border-bottom:3px solid var(--brand);margin-inline:-16px;padding-inline:16px}
+header.top .cap{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:12px 24px;margin:0 -16px;background:var(--cap);color:var(--cap-ink)}
+header.top .brand{display:flex;align-items:center;gap:14px;cursor:pointer}
+header.top .brand b{font-size:18px;font-weight:700;letter-spacing:.42em}
+header.top .brand i{width:1px;height:20px;background:currentColor;opacity:.5}
+header.top .brand span{font-size:12px;letter-spacing:.22em;opacity:.9}
+header.top .capr{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.vsep{width:1px;height:20px;background:currentColor;opacity:.4}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid rgba(255,255,255,.55);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--cap-ink);padding:4px 10px;font-size:13px;border-radius:0;cursor:pointer}
+.seg button+button{border-left:1px solid rgba(255,255,255,.4)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--cap);font-weight:700}
+header.top .hrow{display:flex;justify-content:space-between;align-items:flex-end;gap:10px 20px;flex-wrap:wrap;padding-top:16px}
+header.top .eyebrow{font-size:12px;letter-spacing:.2em;font-weight:600;color:var(--muted)}
+header.top h1{font-size:32px;font-weight:700;letter-spacing:-.02em;margin:2px 0 0}
+header.top .sub{color:var(--muted);font-size:14px;padding-top:4px}
+.portal-link{color:var(--cap-ink);font-size:13px;font-weight:700;text-decoration:none;border:1px solid rgba(255,255,255,.7);border-radius:7px;padding:3px 10px}
+nav.tabs{display:flex;flex-wrap:wrap;margin-top:12px;border-top:1px solid var(--line);padding-top:4px}
+nav.tabs>button{padding:12px 16px;font-size:15px;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--muted);white-space:nowrap;cursor:pointer}
+nav.tabs>button+button{border-left:1px solid var(--line)}
+nav.tabs>button[aria-selected="true"]{background:var(--brand);color:#fff;font-weight:700;border-bottom-color:var(--brand-deep);border-radius:8px 8px 0 0}
+nav.tabs>button:not([aria-selected="true"]):hover{background:var(--acc-soft);color:var(--ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{margin:0;font-size:17px;font-weight:600}.panel h3{margin:0;font-size:15px;font-weight:600}
+.note{color:var(--muted);font-size:13px;margin:0;max-width:72ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}.field>span{font-size:12px;color:var(--muted)}
+select,input[type=text],input[type=number],input[type=date],input[type=search],textarea{background:var(--panel);color:inherit;font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+textarea{width:100%;box-sizing:border-box;resize:vertical}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;padding:6px 12px}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.ghost{border-color:transparent;background:transparent;color:var(--accent);padding-inline:6px}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tbl{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-weight:500;font-size:12px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}td.num{font-family:var(--mono)}
+.pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.pill.ok{color:var(--ok)}.pill.warn{color:var(--warn)}.pill.bad{color:var(--bad)}
+.grade{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;padding:0 8px;border-radius:999px;font-weight:600;font-size:13px;background:var(--chip)}
+.grade.S,.grade.A{background:var(--ok);color:#fff}.grade.B{background:var(--accent-soft);color:var(--accent)}.grade.C{background:var(--chip);color:var(--warn)}
+.score{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:8px}
+.kv{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px}.kv .k{font-size:12px;color:var(--muted)}.kv .v{font-family:var(--mono);font-size:22px}.kv .v small{font-size:13px;color:var(--muted)}
+.disc-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.disc-in label{display:flex;flex-direction:column;font-size:12px;color:var(--muted)}
+.prog{display:flex;flex-direction:column;gap:8px}
+.check{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.check input{margin:0}
+.bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;flex:1;min-width:80px}.bar i{display:block;height:100%;background:var(--brand)}
+.empty{color:var(--muted);font-size:14px;padding:16px 0}.err{color:var(--bad);font-size:13px}
+.edit{display:grid;gap:8px;border:1px dashed var(--line);border-radius:8px;padding:10px}
+.talent{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.talent .tc{border-left:5px solid var(--cap);background:var(--panel);border-radius:8px;padding:12px 14px;box-shadow:0 1px 2px rgba(21,35,43,.06)}.talent .tc b{display:block;font-size:16px;margin-bottom:4px}.talent .tc span{font-size:13px;color:var(--muted)}
+.homeb{border:2px solid var(--brand);color:var(--brand);background:var(--panel);font-weight:700;border-radius:8px;padding:8px 14px}
+.hidden{display:none!important}
+/* ===== OHMY ONE AI bar ===== */
+.ai{background:linear-gradient(180deg,var(--panel),var(--panel));border:2px solid var(--cap);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ai .aihead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ai .badge-ai{background:var(--cap);color:#fff;font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px;letter-spacing:.08em}
+.ai .roles{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-left:auto}
+.ai .roles button{border:0;border-radius:0;background:var(--panel);color:var(--muted);padding:4px 10px;font-size:12px}
+.ai .roles button+button{border-left:1px solid var(--line)}
+.ai .roles button[aria-pressed="true"]{background:var(--cap);color:#fff;font-weight:700}
+.askbar{display:flex;gap:8px;align-items:center;background:var(--chip);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+.askbar input{flex:1;background:transparent;border:0;outline:none;color:var(--ink);font-size:15px}
+.askbar button{background:var(--cap);border-color:var(--cap);color:#fff;font-weight:700}
+.aichips{display:flex;flex-wrap:wrap;gap:6px}
+.aichip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer}
+.aichip:hover{border-color:var(--cap);color:var(--cap)}
+.pipe{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.node{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:10.5px;color:var(--muted);background:var(--chip);font-family:var(--mono)}
+.node .i{width:6px;height:6px;border-radius:50%;background:var(--line)}.node.on{color:var(--ink);border-color:var(--cap);background:var(--acc-soft)}.node.on .i{background:var(--cap)}
+.node.rej{color:var(--bad);border-color:var(--bad)}.node.rej .i{background:var(--bad)}
+.ans{display:flex;flex-direction:column;gap:10px}
+.msg{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.msg .q{padding:9px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);background:var(--chip)}.msg .q b{color:var(--ink)}
+.msg.deny{border-color:var(--bad)}.msg.deny .q{background:#fbe3e1}
+.msg .a{padding:12px}.msg .a p{margin:0 0 7px}.msg .a p:last-child{margin:0}
+.insight{margin-top:8px;padding:8px 11px;border-radius:8px;background:var(--acc-soft);border:1px solid var(--brand);font-size:13px}
+.prov{display:flex;flex-wrap:wrap;gap:4px 12px;padding:9px 12px;border-top:1px dashed var(--line);background:var(--chip);font-family:var(--mono);font-size:11px;color:var(--muted)}.prov b{color:var(--ink)}
+.prov .okp{color:var(--ok)}.prov .nop{color:var(--bad)}
+.fig{font-family:var(--mono);font-weight:700;color:var(--cap)}
+.feed{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow:auto}
+.ev{display:flex;gap:8px;font-size:11.5px;border-bottom:1px solid var(--line);padding-bottom:5px}.ev .a{font-family:var(--mono)}.ev.fail .a{color:var(--bad)}.ev .m{color:var(--muted);font-family:var(--mono);font-size:10px;margin-left:auto}
+.mini{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:600}
+.mini.ghost{background:transparent;color:var(--bad);border-color:var(--bad)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="cap">
+      <div class="brand" id="brand-home"><b>OHMYHOTEL</b><i aria-hidden="true"></i><span>GLOBAL HR</span></div>
+      <div class="capr">
+        <div id="langBar" class="seg" role="group" aria-label="Language"></div>
+        <i class="vsep"></i>
+        <a class="portal-link" href="../index.html" target="_blank" rel="noopener">OHMY ONE ↗</a>
+      </div>
+    </div>
+    <div class="hrow">
+      <div><div class="eyebrow">PEOPLE · HIRING · TRAINING</div><h1 id="t-title">HR Console</h1></div>
+    </div>
+    <div class="sub" id="t-sub"></div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </header>
+
+  <!-- OHMY ONE AI bar (persistent) -->
+  <div class="ai">
+    <div class="aihead">
+      <span class="badge-ai">OHMY ONE AI</span>
+      <span class="note" id="ai-tagline"></span>
+      <div class="roles" id="roleBar" role="group" aria-label="Role"></div>
+    </div>
+    <div class="askbar"><span style="color:var(--cap)">◍</span><input id="ask" aria-label="ask" /><button id="send"></button></div>
+    <div class="aichips" id="aichips"></div>
+    <div class="pipe" id="pipe" aria-hidden="true"></div>
+    <div class="ans" id="ans"></div>
+  </div>
+
+  <div id="status" class="err hidden"></div>
+
+  <!-- HOME -->
+  <section id="tab-home" class="tabpane" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel" style="border-left:6px solid var(--cap)"><div class="row" style="justify-content:space-between"><h2 id="al-h"></h2><span class="note" id="al-sub"></span></div><div id="al-list"></div></div>
+    <div class="panel"><h2 id="talent-h"></h2><div class="talent" id="talent-home"></div></div>
+    <div class="panel">
+      <h3 id="q-new-h"></h3>
+      <div class="grid2">
+        <label class="field"><span id="q-type-l"></span><select id="q-type"></select></label>
+        <label class="field"><span id="q-country-l"></span><select id="q-ncountry"></select></label>
+        <label class="field"><span id="q-title-l"></span><input type="text" id="q-title" maxlength="120"></label>
+        <label class="field"><span id="q-decider-l"></span><select id="q-decider"></select></label>
+      </div>
+      <label class="field"><span id="q-detail-l"></span><textarea id="q-detail" rows="2" maxlength="2000"></textarea></label>
+      <div class="row"><button class="primary" id="q-add"></button><span class="note" id="q-st"></span></div>
+      <div id="q-list"></div>
+    </div>
+  </section>
+
+  <!-- PEOPLE -->
+  <section id="tab-people" class="tabpane hidden" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between"><h2 id="pp-h"></h2><span class="note" id="pp-sum"></span></div>
+      <div class="row">
+        <select id="pp-cty"></select><select id="pp-team"></select>
+        <input type="search" id="pp-q" placeholder="🔎" style="flex:1;min-width:160px">
+      </div>
+      <div class="row"><button class="primary" id="pp-add"></button><button id="pp-paste-btn"></button></div>
+      <div id="pp-paste" class="edit hidden">
+        <p class="note" id="pp-paste-note"></p>
+        <textarea id="pp-paste-text" rows="4" placeholder="Changhyun Yoon (Jason)	KR	Account & HR	HR	2026-07-13"></textarea>
+        <div class="row"><button class="primary" id="pp-paste-go"></button><span class="note" id="pp-paste-st"></span></div>
+      </div>
+    </div>
+    <div class="panel"><div class="tbl"><table id="pp-table"><thead></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <!-- SCREENING + CANDIDATES -->
+  <section id="tab-cands" class="tabpane hidden" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h2 id="sc-h"></h2><p class="note" id="sc-note"></p>
+      <div class="grid2">
+        <label class="field"><span id="sc-pos-l"></span><select id="sc-pos"></select></label>
+        <label class="field"><span id="sc-name-l"></span><input type="text" id="sc-name" maxlength="60"></label>
+        <label class="field"><span id="sc-cty-l"></span><select id="sc-cty"></select></label>
+        <label class="field"><span id="sc-disc-l"></span><input type="text" id="sc-disc" maxlength="8" placeholder="SC"></label>
+      </div>
+      <label class="field"><span id="sc-resume-l"></span><textarea id="sc-resume" rows="4" placeholder="이력서 텍스트를 붙여넣으세요…"></textarea></label>
+      <div class="row"><button class="primary" id="sc-run"></button><span class="note" id="sc-st"></span></div>
+      <div id="sc-result"></div>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between"><h2 id="cd-h"></h2><span class="note" id="cd-sum"></span></div>
+      <div class="tbl"><table id="cd-table"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- HIRES -->
+  <section id="tab-hires" class="tabpane hidden" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h2 id="hi-h"></h2><p class="note" id="hi-note"></p>
+      <div class="grid2">
+        <label class="field"><span id="hi-name-l"></span><input type="text" id="hi-name" maxlength="60"></label>
+        <label class="field"><span id="hi-role-l"></span><input type="text" id="hi-role" maxlength="40"></label>
+        <label class="field"><span id="hi-cty-l"></span><select id="hi-cty"></select></label>
+        <label class="field"><span id="hi-start-l"></span><input type="date" id="hi-start"></label>
+        <label class="field"><span id="hi-prob-l"></span><input type="number" id="hi-prob" min="0" max="365" value="90"></label>
+      </div>
+      <div class="row"><button class="primary" id="hi-add"></button><span class="note" id="hi-st"></span></div>
+    </div>
+    <div class="panel"><div id="hi-list" class="prog"></div></div>
+  </section>
+
+  <!-- EXITS -->
+  <section id="tab-exits" class="tabpane hidden" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h2 id="xo-h"></h2><p class="note" id="xo-note"></p>
+      <div class="grid2">
+        <label class="field"><span id="xo-name-l"></span><input type="text" id="xo-name" maxlength="60"></label>
+        <label class="field"><span id="xo-cty-l"></span><select id="xo-cty"></select></label>
+        <label class="field"><span id="xo-last-l"></span><input type="date" id="xo-last"></label>
+      </div>
+      <div class="row"><button class="primary" id="xo-add"></button><span class="note" id="xo-st"></span></div>
+    </div>
+    <div id="xo-list" class="prog"></div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="tab-lib" class="tabpane hidden" style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h2 id="lib-h"></h2><p class="note" id="lib-note"></p>
+      <div class="row"><input type="search" id="lib-q" placeholder="🔎" style="flex:1;min-width:180px"><select id="lib-aud"></select></div>
+      <div id="lib-list"></div>
+    </div>
+  </section>
+
+  <!-- AUDIT -->
+  <section id="tab-audit" class="tabpane hidden">
+    <div class="panel">
+      <h2 id="au-h"></h2><p class="note" id="au-note"></p>
+      <div class="tbl"><table class="audit"><thead><tr><th>ID</th><th id="au-time"></th><th id="au-action"></th><th id="au-actor"></th><th id="au-tool"></th><th id="au-res"></th></tr></thead><tbody id="au-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <footer class="note" style="padding-top:8px" id="foot"></footer>
+</div>
+
+<script>
+/* ============ STORE (localStorage, 실제 영속) ============ */
+var STORE=(function(){
+  var KEY="omh_hrc_v1";
+  var seed={
+    people:[
+      {id:"P1",name:"Lucy Park",country:"KR",team:"OP",role:"OP Specialist",start:"2021-07-01"},
+      {id:"P2",name:"David Kim",country:"KR",team:"OP",role:"OP Manager",start:"2019-05-06"},
+      {id:"P3",name:"Hana Seo",country:"KR",team:"HR",role:"HR Lead",start:"2019-07-01"},
+      {id:"P4",name:"Grace Choi",country:"KR",team:"LEAD",role:"CEO",start:"2018-01-02"},
+      {id:"P5",name:"Nguyen An",country:"VN",team:"OP",role:"OP Specialist",start:"2024-03-01"},
+      {id:"P6",name:"Tran Binh",country:"VN",team:"GSM",role:"GSM Specialist",start:"2024-06-01"},
+      {id:"P7",name:"Sato Yuki",country:"JP",team:"SCM",role:"SCM Analyst",start:"2023-02-01"},
+      {id:"P8",name:"Wei Tan",country:"SG",team:"DEV",role:"Backend Dev",start:"2022-09-01"},
+      {id:"P9",name:"Mei Ng",country:"SG",team:"MKT",role:"Marketer",start:"2023-05-01"},
+      {id:"P10",name:"Le Chi",country:"VN",team:"OP",role:"OP Specialist",start:"2025-01-10"}
+    ],
+    candidates:[
+      {id:"C1",pos:"OP Specialist",name:"지원자 김OO",country:"KR",stage:"interview",disc:"SC",score:0},
+      {id:"C2",pos:"Backend Dev",name:"지원자 Tran",country:"VN",stage:"final",disc:"DC",score:0},
+      {id:"C3",pos:"GSM Manager",name:"지원자 Sato",country:"JP",stage:"screen",disc:"ID",score:0},
+      {id:"C4",pos:"HR Partner",name:"지원자 Lim",country:"SG",stage:"offer",disc:"CS",score:0}
+    ],
+    hires:[
+      {id:"H1",name:"Jason Yoon",role:"HR Partner",country:"KR",start:"2026-11-10",prob:90},
+      {id:"H2",name:"Mai Tran",role:"OP Specialist",country:"VN",start:"2026-11-03",prob:60}
+    ],
+    exits:[
+      {id:"X1",name:"Tom Baek",country:"KR",last:"2026-11-14",checks:{letter:1,notice:1,handover:1,leave:1,pay:0,accounts:0,assets:0,interview:0,lastday:0,master:0}},
+      {id:"X2",name:"Linh Vo",country:"VN",last:"2026-11-07",checks:{letter:1,notice:1,handover:1,leave:1,pay:1,accounts:1,assets:0,interview:1,lastday:1,master:0}}
+    ],
+    decisions:[
+      {id:"D1",type:"TRAINING",title:"리더십 교육 수강",country:"KR",requester:"Lucy Park",decider:"Hana Seo",detail:"외부 리더십 과정 2일",status:"pending"}
+    ],
+    audit:[]
+  };
+  var db;
+  try{db=JSON.parse(localStorage.getItem(KEY))||null;}catch(e){db=null;}
+  if(!db){db=JSON.parse(JSON.stringify(seed));save();}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}}
+  function reset(){db=JSON.parse(JSON.stringify(seed));save();}
+  return{db:function(){return db;},save:save,reset:reset};
+})();
+</script>
+<script>
+/* ============ I18N (ko/ja/en/vi) ============ */
+var I18N=(function(){
+  var LANGS=[["ko","KO"],["ja","JA"],["en","EN"],["vi","VI"]];
+  var T={
+    title:{ko:"HR 콘솔",ja:"HR コンソール",en:"HR Console",vi:"HR Console"},
+    sub:{ko:"인원 · 채용 · 입/퇴사 · 교육을 한 곳에서. 위 OHMY ONE AI에게 물어보면 탭과 같은 데이터로 바로 답합니다.",ja:"人員・採用・入退社・研修を一つに。上のOHMY ONE AIが同じデータで即答。",en:"People, hiring, on/offboarding, training in one place. Ask OHMY ONE AI above — it answers from the same data.",vi:"Nhân sự, tuyển dụng, nhận/nghỉ việc, đào tạo một nơi."},
+    ai_tag:{ko:"메뉴 없이 물어보세요. 권한 안에서 같은 데이터로 답하고, 모든 요청을 기록합니다.",ja:"メニューなしで質問。権限内で同じデータから回答し記録します。",en:"Ask without menus. Answers within your permission from the same data; everything audited.",vi:"Hỏi không cần menu. Trả lời trong quyền hạn, có ghi nhật ký."},
+    ask_ph:{ko:"예: 이번주 입사자? / Tom 오프보딩 어디까지? / 교육비 기안 올려줘",ja:"例: 今週の入社者？ / Tomのオフボーディング？",en:"e.g. Who starts this week? / Tom's offboarding? / submit a training request",vi:"vd: Ai vào tuần này? / Offboarding của Tom?"},
+    send:{ko:"물어보기",ja:"質問",en:"Ask",vi:"Hỏi"},
+    tab_home:{ko:"홈",ja:"ホーム",en:"Home",vi:"Trang chủ"},tab_people:{ko:"인원",ja:"人員",en:"People",vi:"Nhân sự"},tab_cands:{ko:"채용",ja:"採用",en:"Hiring",vi:"Tuyển dụng"},tab_hires:{ko:"입사",ja:"入社",en:"Onboarding",vi:"Nhận việc"},tab_exits:{ko:"퇴사",ja:"退職",en:"Offboarding",vi:"Nghỉ việc"},tab_lib:{ko:"교육·자료",ja:"研修資料",en:"Training",vi:"Đào tạo"},tab_audit:{ko:"감사 로그",ja:"監査ログ",en:"Audit",vi:"Nhật ký"},
+    role_STAFF:{ko:"사원",ja:"社員",en:"Staff",vi:"NV"},role_MANAGER:{ko:"팀장",ja:"マネージャー",en:"Manager",vi:"QL"},role_HR:{ko:"인사",ja:"人事",en:"HR",vi:"HR"},role_CEO:{ko:"대표",ja:"代表",en:"CEO",vi:"CEO"},
+    // home
+    al_h:{ko:"결재/요청 대기함",ja:"承認/依頼",en:"Approvals / requests",vi:"Phê duyệt / yêu cầu"},talent_h:{ko:"이번주 포커스",ja:"今週のフォーカス",en:"This week",vi:"Tuần này"},
+    q_new:{ko:"요청/기안 올리기",ja:"依頼/起案",en:"New request",vi:"Yêu cầu mới"},q_type:{ko:"유형",ja:"種類",en:"Type",vi:"Loại"},country:{ko:"법인",ja:"法人",en:"Entity",vi:"Pháp nhân"},q_title:{ko:"제목",ja:"件名",en:"Title",vi:"Tiêu đề"},q_decider:{ko:"결재자",ja:"決裁者",en:"Approver",vi:"Người duyệt"},q_detail:{ko:"내용",ja:"内容",en:"Details",vi:"Chi tiết"},q_send:{ko:"상신",ja:"提出",en:"Submit",vi:"Trình"},
+    // people
+    pp_h:{ko:"인원 명부",ja:"人員名簿",en:"People",vi:"Danh sách"},pp_add:{ko:"+ 인원 추가",ja:"+ 追加",en:"+ Add",vi:"+ Thêm"},pp_paste:{ko:"붙여넣기 등록",ja:"貼付登録",en:"Bulk paste",vi:"Dán hàng loạt"},pp_paste_note:{ko:"탭 구분: 이름 / 법인 / 팀 / 직무 / 입사일",ja:"タブ区切り",en:"Tab-separated: name / entity / team / role / start",vi:"Tách bằng tab"},save:{ko:"저장",ja:"保存",en:"Save",vi:"Lưu"},
+    th_name:{ko:"성명",ja:"氏名",en:"Name",vi:"Tên"},th_team:{ko:"팀",ja:"チーム",en:"Team",vi:"Nhóm"},th_role:{ko:"직무",ja:"職務",en:"Role",vi:"Vị trí"},th_start:{ko:"입사일",ja:"入社日",en:"Start",vi:"Ngày vào"},th_act:{ko:"",ja:"",en:"",vi:""},
+    // cands
+    sc_h:{ko:"채용 스크리닝",ja:"採用スクリーニング",en:"Screening",vi:"Sàng lọc"},sc_note:{ko:"이력서를 붙여넣고 DISC를 입력하면 OHMY ONE AI가 요약·적합도를 평가합니다.",ja:"履歴書とDISCでAIが評価。",en:"Paste a resume + DISC; OHMY ONE AI summarizes and scores fit.",vi:"Dán CV + DISC để AI đánh giá."},sc_pos:{ko:"포지션",ja:"ポジション",en:"Position",vi:"Vị trí"},sc_name:{ko:"후보자",ja:"候補者",en:"Candidate",vi:"Ứng viên"},sc_disc:{ko:"DISC 유형",ja:"DISC",en:"DISC type",vi:"DISC"},sc_resume:{ko:"이력서",ja:"履歴書",en:"Resume",vi:"CV"},sc_run:{ko:"AI 평가 실행",ja:"AI評価",en:"Run AI review",vi:"Chạy AI"},
+    cd_h:{ko:"후보자",ja:"候補者",en:"Candidates",vi:"Ứng viên"},th_pos:{ko:"포지션",ja:"ポジション",en:"Position",vi:"Vị trí"},th_stage:{ko:"단계",ja:"段階",en:"Stage",vi:"Giai đoạn"},
+    // hires
+    hi_h:{ko:"입사 · 수습 트래커",ja:"入社・試用",en:"Onboarding · probation",vi:"Nhận việc · thử việc"},hi_note:{ko:"입사 예정자와 수습 종료일을 관리합니다.",ja:"入社予定と試用を管理。",en:"Track upcoming hires and probation.",vi:"Theo dõi người sắp vào."},hi_role:{ko:"직무",ja:"職務",en:"Role",vi:"Vị trí"},hi_start:{ko:"입사일",ja:"入社日",en:"Start",vi:"Ngày vào"},hi_prob:{ko:"수습(일)",ja:"試用(日)",en:"Prob (d)",vi:"Thử (ngày)"},hi_add:{ko:"+ 입사자 추가",ja:"+ 追加",en:"+ Add hire",vi:"+ Thêm"},
+    // exits
+    xo_h:{ko:"퇴사 오프보딩",ja:"退職オフボーディング",en:"Offboarding",vi:"Nghỉ việc"},xo_note:{ko:"체크리스트 10개 항목으로 인수인계·정산·자산 회수를 추적합니다.",ja:"10項目で追跡。",en:"10-item checklist for handover, settlement and asset return.",vi:"Danh sách 10 mục."},xo_last:{ko:"최종근무일",ja:"最終日",en:"Last day",vi:"Ngày cuối"},xo_add:{ko:"+ 퇴사자 추가",ja:"+ 追加",en:"+ Add exit",vi:"+ Thêm"},
+    // lib / audit
+    lib_h:{ko:"교육 자료실",ja:"研修資料",en:"Training library",vi:"Thư viện"},lib_note:{ko:"팀별 교육 자료. 검색하거나 AI에게 '온보딩 교육 찾아줘'라고 물어보세요.",ja:"チーム別資料。",en:"Materials by team. Search or ask the AI.",vi:"Tài liệu theo nhóm."},
+    au_h:{ko:"감사 로그",ja:"監査ログ",en:"Audit log",vi:"Nhật ký"},au_note:{ko:"모든 조회·작성·거부가 추가 전용으로 기록됩니다.",ja:"全操作を追記記録。",en:"Every read, write and denial is logged append-only.",vi:"Mọi thao tác đều ghi."},au_time:{ko:"시각",ja:"時刻",en:"Time",vi:"Thời gian"},au_action:{ko:"액션",ja:"操作",en:"Action",vi:"Hành động"},au_actor:{ko:"행위자",ja:"実行者",en:"Actor",vi:"Người"},au_tool:{ko:"도구",ja:"ツール",en:"Tool",vi:"Công cụ"},au_res:{ko:"결과",ja:"結果",en:"Result",vi:"Kết quả"},
+    foot:{ko:"OMH HR 콘솔 클론 + OHMY ONE AI · 데이터는 브라우저(localStorage)에 실제 저장되어 AI와 탭이 같은 데이터로 맞물립니다. 수치는 시연용 샘플.",ja:"HRコンソール + OHMY ONE AI。",en:"HR console clone + OHMY ONE AI. Data persists in your browser; AI and tabs share it. Sample data.",vi:"Bản sao HR console + OHMY ONE AI."},
+    go_home:{ko:"홈",ja:"ホーム",en:"Home",vi:"Trang chủ"},
+    denied:{ko:"권한이 없어 거부되었습니다. 이 역할에는 {perm} 권한이 없습니다.",ja:"権限がありません: {perm}。",en:"Denied — this role lacks {perm}.",vi:"Từ chối — thiếu {perm}."},
+    denied_note:{ko:"요청은 권한 엔진에서 차단되고 감사 로그에 기록됩니다.",ja:"権限エンジンで遮断・記録。",en:"Blocked at the permission engine and audited.",vi:"Chặn và ghi nhật ký."},
+    unrecognized:{ko:"이해하지 못했어요. 아래 예시를 눌러보거나 다르게 물어봐 주세요.",ja:"理解できません。例をどうぞ。",en:"I didn't catch that — try an example.",vi:"Chưa hiểu — thử ví dụ."},
+    done:{ko:"완료",ja:"完了",en:"done",vi:"xong"},pending:{ko:"대기중",ja:"承認待ち",en:"Pending",vi:"Chờ"},approved:{ko:"승인됨",ja:"承認済",en:"Approved",vi:"Đã duyệt"}
+  };
+  var CHIPS={
+    STAFF:[["leaveMine","내 입사일/정보"],["myRequests","내 요청 현황"],["submitTraining","교육비 기안 올려줘"]],
+    MANAGER:[["headcount","우리 인원 현황"],["hiring","채용 현황"],["starting","이번 입사 예정자"],["pendingAppr","내가 승인할 것"]],
+    HR:[["headcount","법인별 인원 현황"],["hiring","채용 파이프라인"],["starting","입사 예정자"],["leaving","퇴사 진행"],["offboard","오프보딩 미완료"]],
+    CEO:[["summary","HR 요약 브리핑"],["headcount","법인별 인원"],["hiring","채용 현황"],["pendingAppr","결재 대기"]]
+  };
+  var CHIP_L={leaveMine:{ko:"내 정보 보여줘",en:"My info",ja:"自分の情報",vi:"Thông tin tôi"},myRequests:{ko:"내 요청 현황",en:"My requests",ja:"自分の依頼",vi:"Yêu cầu của tôi"},submitTraining:{ko:"교육비 기안 올려줘",en:"Submit training request",ja:"研修費を起案",vi:"Trình đào tạo"},headcount:{ko:"법인별 인원 현황",en:"Headcount by entity",ja:"法人別人員",vi:"Nhân sự theo PN"},hiring:{ko:"채용 파이프라인",en:"Hiring pipeline",ja:"採用状況",vi:"Pipeline tuyển"},starting:{ko:"이번 입사 예정자",en:"Who's starting",ja:"入社予定者",vi:"Sắp vào"},leaving:{ko:"퇴사 진행 현황",en:"Who's leaving",ja:"退職者",vi:"Sắp nghỉ"},offboard:{ko:"오프보딩 미완료 항목",en:"Open offboarding items",ja:"オフボーディング未完",vi:"Offboarding chưa xong"},pendingAppr:{ko:"내가 승인할 것",en:"What I approve",ja:"承認すべき",vi:"Cần duyệt"},summary:{ko:"HR 요약 브리핑",en:"HR summary",ja:"HRサマリー",vi:"Tổng quan HR"}};
+  function t(l,k,p){var e=T[k];var s=e?(e[l]||e.en):k;if(p)for(var x in p)s=s.replace(new RegExp("{"+x+"}","g"),p[x]);return s;}
+  return{LANGS:LANGS,t:t,chips:function(r){return CHIPS[r]||[];},chipLabel:function(l,i){var e=CHIP_L[i];return e?(e[l]||e.en):i;}};
+})();
+</script>
+<script>
+/* ============ OHMY ONE AI ENGINE (권한·감사·결정론 + 쓰기) ============ */
+var AI=(function(){
+  var S=STORE;
+  var CTRY={KR:"한국",JP:"일본",VN:"베트남",SG:"싱가포르"};
+  var XK=["letter","lastday","notice","leave","pay","handover","accounts","assets","interview","master"];
+  var XKN={letter:"사직서",lastday:"최종근무일",notice:"통지",leave:"잔여연차 정산",pay:"급여 정산",handover:"인수인계",accounts:"계정 회수",assets:"자산 반납",interview:"퇴직 면담",master:"마스터 갱신"};
+  var PERMS={
+    STAFF:["SELF","SUBMIT"],
+    MANAGER:["SELF","SUBMIT","READ_TEAM","READ_HIRING","APPROVE"],
+    HR:["SELF","SUBMIT","READ_TEAM","READ_ALL","READ_HIRING","WRITE_ALL","APPROVE"],
+    CEO:["SELF","READ_ALL","READ_HIRING","APPROVE","EXEC"]
+  };
+  function can(role,p){return (PERMS[role]||[]).indexOf(p)>=0;}
+  function audit(role,action,tool,ok){var db=S.db();db.audit.unshift({id:"a"+String(db.audit.length+1).padStart(4,"0"),ts:new Date().toISOString(),actor:I18N.t('ko','role_'+role),action:action,tool:tool,success:ok!==false});S.save();}
+  function ok(role,tool,perm,action,kind,data){audit(role,action,tool,true);return{ok:true,tool:tool,perm:perm,audit:action,kind:kind,data:data};}
+  function deny(role,tool,need){audit(role,"PERMISSION_DENIED",tool,false);return{ok:false,tool:tool,need:need,kind:"deny"};}
+  function findPerson(q){q=(q||"").toLowerCase();return S.db().people.find(function(p){return p.name.toLowerCase().indexOf(q)>=0;});}
+  function findExit(q){q=(q||"").toLowerCase();return S.db().exits.find(function(x){return x.name.toLowerCase().indexOf(q)>=0;});}
+
+  var API={
+    headcount:function(role){if(!can(role,"READ_ALL")&&!can(role,"READ_TEAM"))return deny(role,"get_headcount","READ_TEAM");
+      var by={};S.db().people.forEach(function(p){by[p.country]=(by[p.country]||0)+1;});
+      return ok(role,"get_headcount","READ_ALL","HEADCOUNT_VIEWED","table",{title:"법인별 인원 현황",cols:["법인","인원"],rows:Object.keys(by).map(function(c){return[CTRY[c]||c,by[c]];}),total:["합계",S.db().people.length],insight:"총 "+S.db().people.length+"명. 인원이 늘면 입사·수습 트래커도 함께 확인하세요."});},
+    hiring:function(role){if(!can(role,"READ_HIRING"))return deny(role,"get_hiring","READ_HIRING");
+      var st={applied:"지원",screen:"서류",interview:"면접",final:"최종",offer:"오퍼"};var by={};S.db().candidates.forEach(function(c){by[c.stage]=(by[c.stage]||0)+1;});
+      var rows=Object.keys(st).map(function(k){return[st[k],by[k]||0];});
+      return ok(role,"get_hiring","READ_HIRING","HIRING_VIEWED","table",{title:"채용 파이프라인",cols:["단계","인원"],rows:rows,total:["합계",S.db().candidates.length],insight:"오퍼 단계 후보는 빠른 처우 확정이 필요합니다. 면접·최종에 몰리면 결정 속도가 병목입니다."});},
+    starting:function(role){if(!can(role,"READ_HIRING")&&!can(role,"READ_ALL"))return deny(role,"get_onboarding","READ_HIRING");
+      return ok(role,"get_onboarding","READ_HIRING","ONBOARDING_VIEWED","table",{title:"입사 예정자",cols:["성명","직무","법인","입사일"],rows:S.db().hires.map(function(h){return[h.name,h.role,CTRY[h.country]||h.country,h.start];}),insight:"입사 전 계정·장비·오리엔테이션 준비가 필요합니다."});},
+    leaving:function(role){if(!can(role,"READ_ALL"))return deny(role,"get_offboarding","READ_ALL");
+      return ok(role,"get_offboarding","READ_ALL","OFFBOARDING_VIEWED","exits",{rows:S.db().exits.map(function(x){var done=XK.filter(function(k){return x.checks[k];}).length;var todo=XK.filter(function(k){return !x.checks[k];}).map(function(k){return XKN[k];});return{name:x.name,country:CTRY[x.country]||x.country,last:x.last,done:done,total:XK.length,todo:todo};})});},
+    offboard:function(role,args){if(!can(role,"READ_ALL"))return deny(role,"get_offboarding","READ_ALL");
+      if(args&&args.name){var x=findExit(args.name);if(x){var done=XK.filter(function(k){return x.checks[k];}).length;var todo=XK.filter(function(k){return !x.checks[k];}).map(function(k){return XKN[k];});
+        return ok(role,"get_offboarding","READ_ALL","OFFBOARDING_VIEWED","exits",{rows:[{name:x.name,country:CTRY[x.country]||x.country,last:x.last,done:done,total:XK.length,todo:todo}]});}}
+      return API.leaving(role);},
+    summary:function(role){if(!can(role,"EXEC")&&!can(role,"READ_ALL"))return deny(role,"get_hr_summary","EXEC");
+      var db=S.db();var openX=db.exits.filter(function(x){return XK.filter(function(k){return !x.checks[k];}).length>0;}).length;
+      return ok(role,"get_hr_summary","EXEC","SUMMARY_VIEWED","table",{title:"HR 요약",cols:["지표","값"],rows:[["총 인원",db.people.length+"명"],["채용 진행",db.candidates.length],["입사 예정",db.hires.length],["퇴사 진행",db.exits.length],["오프보딩 미완료",openX],["결재 대기",db.decisions.filter(function(d){return d.status==="pending";}).length]],insight:"오프보딩 미완료와 결재 대기를 우선 처리하세요."});},
+    pendingAppr:function(role){if(!can(role,"APPROVE"))return deny(role,"get_pending","APPROVE");
+      var rows=S.db().decisions.filter(function(d){return d.status==="pending";});
+      return ok(role,"get_pending","APPROVE","APPROVALS_VIEWED","decisions",{rows:rows});},
+    leaveMine:function(role){var me=findPerson(role==="STAFF"?"lucy":role==="MANAGER"?"david":role==="HR"?"hana":"grace")||S.db().people[0];
+      return ok(role,"get_my_info","SELF","SELF_VIEWED","table",{title:"내 정보",cols:["항목","값"],rows:[["성명",me.name],["법인",CTRY[me.country]||me.country],["팀",me.team],["직무",me.role],["입사일",me.start]]});},
+    myRequests:function(role){var rows=S.db().decisions.filter(function(d){return true;});return ok(role,"get_my_requests","SELF","REQUESTS_VIEWED","decisions",{rows:rows,readonly:true});},
+    // 쓰기: 교육비 기안 상신 (STAFF+ 가능)
+    submitTraining:function(role,args){if(!can(role,"SUBMIT"))return deny(role,"submit_request","SUBMIT");
+      var db=S.db();var d={id:"D"+(db.decisions.length+1),type:(args&&args.type)||"TRAINING",title:(args&&args.title)||"교육비 신청",country:"KR",requester:I18N.t('ko','role_'+role),decider:"Hana Seo",detail:(args&&args.detail)||"",status:"pending"};
+      db.decisions.unshift(d);S.save();
+      return ok(role,"submit_request","SUBMIT","REQUEST_SUBMITTED","action",{text:"‘"+d.title+"’ 요청이 결재 대기함에 상신되었습니다. (결재자: "+d.decider+")",refresh:["home"],insight:"홈 탭 결재 대기함에서 확인·승인할 수 있습니다."});},
+    // 쓰기: 오프보딩 항목 체크 (HR만)
+    checkOffboard:function(role,args){if(!can(role,"WRITE_ALL"))return deny(role,"update_offboarding","WRITE_ALL");
+      var x=findExit(args&&args.name);if(!x)return ok(role,"update_offboarding","WRITE_ALL","OFFBOARD_NOOP","action",{text:"해당 퇴사자를 찾지 못했습니다."});
+      var key=null;for(var k in XKN){if((args.item||"").indexOf(XKN[k])>=0||(args.item||"").toLowerCase().indexOf(k)>=0){key=k;break;}}
+      if(!key)return ok(role,"update_offboarding","WRITE_ALL","OFFBOARD_NOOP","action",{text:"항목을 인식하지 못했습니다. 예: 자산 반납, 계정 회수, 급여 정산"});
+      x.checks[key]=1;S.save();var done=XK.filter(function(kk){return x.checks[kk];}).length;
+      return ok(role,"update_offboarding","WRITE_ALL","OFFBOARD_UPDATED","action",{text:x.name+" · "+XKN[key]+" 완료 처리. 진행률 "+done+"/"+XK.length,refresh:["exits"],insight:"퇴사 탭 진행률이 갱신되었습니다."});},
+    // 쓰기: 입사자 추가 (HR만)
+    addHire:function(role,args){if(!can(role,"WRITE_ALL"))return deny(role,"add_hire","WRITE_ALL");
+      var db=S.db();var h={id:"H"+(db.hires.length+1),name:(args&&args.name)||"신규 입사자",role:(args&&args.role)||"미정",country:(args&&args.country)||"KR",start:(args&&args.start)||"2026-12-01",prob:90};
+      db.hires.unshift(h);S.save();return ok(role,"add_hire","WRITE_ALL","HIRE_ADDED","action",{text:h.name+" 입사자가 등록되었습니다. (입사일 "+h.start+")",refresh:["hires"],insight:"입사 탭에서 수습 종료일을 관리하세요."});},
+    screen:function(role,args){if(!can(role,"READ_HIRING"))return deny(role,"ai_screen","READ_HIRING");return ok(role,"ai_screen","READ_HIRING","SCREENING_RUN","screen",args);}
+  };
+  function route(text){var t=(text||"").toLowerCase();var any=function(){return [].some.call(arguments,function(w){return t.indexOf(w)>=0;});};
+    // 쓰기 우선
+    if(any("체크","완료","처리")&&any("오프보딩","자산","반납","계정","회수","급여","정산","인수","면담")){var nm=/(tom|linh|baek|vo|[가-힣]{2,4})/i.exec(text);return{intent:"checkOffboard",args:{name:nm?nm[0]:"",item:text}};}
+    if(any("입사자","채용자")&&any("추가","등록"))return{intent:"addHire",args:{}};
+    if(any("기안","상신","신청","요청","올려")&&any("교육","training","연수")) return{intent:"submitTraining",args:{type:"TRAINING",title:"교육비 신청",detail:text}};
+    if(any("기안","상신","신청","요청","올려")) return{intent:"submitTraining",args:{type:"GENERAL",title:(text||"").trim().slice(0,30),detail:text}};
+    if(any("승인","결재")&&any("할","대기","목록"))return{intent:"pendingAppr"};
+    if(any("인원","headcount","人数","nhân sự","현황")&&!any("채용"))return{intent:"headcount"};
+    if(any("채용","hiring","파이프라인","採用","tuyển"))return{intent:"hiring"};
+    if(any("입사","onboard","入社","수습","예정"))return{intent:"starting"};
+    if(any("퇴사","오프보딩","offboard","退職"))return{var:1,intent:"offboard",args:{name:(/(tom|linh|baek|vo)/i.exec(text)||[""])[0]}};
+    if(any("요약","summary","브리핑","총"))return{intent:"summary"};
+    if(any("내 정보","내정보","my info","내 "))return{intent:"leaveMine"};
+    if(any("내 요청","요청 현황"))return{intent:"myRequests"};
+    return null;}
+  function call(role,intent,args){var fn=API[intent];return fn?fn(role,args):null;}
+  return{can:can,call:call,route:route,PERMS:PERMS,CTRY:CTRY,XK:XK,XKN:XKN};
+})();
+</script>
+<script>
+/* ============ APP ============ */
+(function(){
+  var S=STORE,t=I18N.t,root=document.documentElement;
+  var lang="ko",role="HR",tab="home",busy=false;
+  function $(s){return document.querySelector(s);}
+  function el(tag,attrs,html){var e=document.createElement(tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function hhmm(iso){var d=new Date(iso);function p(n){return(n<10?"0":"")+n;}return p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds());}
+  var CTRY=AI.CTRY,XK=AI.XK,XKN=AI.XKN;
+
+  var TABS=[["home","tab_home"],["people","tab_people"],["cands","tab_cands"],["hires","tab_hires"],["exits","tab_exits"],["lib","tab_lib"],["audit","tab_audit"]];
+
+  /* lang + role + theme bars */
+  function buildLangBar(){var b=$("#langBar");b.innerHTML="";I18N.LANGS.forEach(function(L){var x=el("button",{"aria-pressed":L[0]===lang?"true":"false"},L[1]);x.onclick=function(){lang=L[0];applyAll();};b.appendChild(x);});}
+  function buildRoleBar(){var b=$("#roleBar");b.innerHTML="";["STAFF","MANAGER","HR","CEO"].forEach(function(r){var x=el("button",{"aria-pressed":r===role?"true":"false"},t(lang,"role_"+r));x.onclick=function(){role=r;renderChips();renderPerm();applyAll();};b.appendChild(x);});}
+
+  /* tabs */
+  function buildTabs(){var n=$("#tabs");n.innerHTML="";TABS.forEach(function(T){var b=el("button",{role:"tab","aria-selected":T[0]===tab?"true":"false"},t(lang,T[1]));b.onclick=function(){tab=T[0];showTab();};n.appendChild(b);});}
+  function showTab(){TABS.forEach(function(T){var s=$("#tab-"+T[0]);if(s)s.classList.toggle("hidden",T[0]!==tab);});
+    [].forEach.call($("#tabs").children,function(b,i){b.setAttribute("aria-selected",TABS[i][0]===tab?"true":"false");});
+    renderTab();}
+
+  /* ---------- i18n apply ---------- */
+  function applyAll(){
+    document.documentElement.lang=lang;
+    $("#t-title").textContent="OMH "+t(lang,"title");$("#t-sub").textContent=t(lang,"sub");
+    $("#ai-tagline").textContent=t(lang,"ai_tag");$("#ask").setAttribute("placeholder",t(lang,"ask_ph"));$("#send").textContent=t(lang,"send");
+    buildTabs();buildLangBar();buildRoleBar();
+    // home labels
+    $("#al-h").textContent=t(lang,"al_h");$("#talent-h").textContent=t(lang,"talent_h");$("#q-new-h").textContent=t(lang,"q_new");
+    $("#q-type-l").textContent=t(lang,"q_type");$("#q-country-l").textContent=t(lang,"country");$("#q-title-l").textContent=t(lang,"q_title");$("#q-decider-l").textContent=t(lang,"q_decider");$("#q-detail-l").textContent=t(lang,"q_detail");$("#q-add").textContent=t(lang,"q_send");
+    $("#pp-h").textContent=t(lang,"pp_h");$("#pp-add").textContent=t(lang,"pp_add");$("#pp-paste-btn").textContent=t(lang,"pp_paste");$("#pp-paste-note").textContent=t(lang,"pp_paste_note");$("#pp-paste-go").textContent=t(lang,"save");
+    $("#sc-h").textContent=t(lang,"sc_h");$("#sc-note").textContent=t(lang,"sc_note");$("#sc-pos-l").textContent=t(lang,"sc_pos");$("#sc-name-l").textContent=t(lang,"sc_name");$("#sc-cty-l").textContent=t(lang,"country");$("#sc-disc-l").textContent=t(lang,"sc_disc");$("#sc-resume-l").textContent=t(lang,"sc_resume");$("#sc-run").textContent=t(lang,"sc_run");$("#cd-h").textContent=t(lang,"cd_h");
+    $("#hi-h").textContent=t(lang,"hi_h");$("#hi-note").textContent=t(lang,"hi_note");$("#hi-name-l").textContent=t(lang,"th_name");$("#hi-role-l").textContent=t(lang,"hi_role");$("#hi-cty-l").textContent=t(lang,"country");$("#hi-start-l").textContent=t(lang,"hi_start");$("#hi-prob-l").textContent=t(lang,"hi_prob");$("#hi-add").textContent=t(lang,"hi_add");
+    $("#xo-h").textContent=t(lang,"xo_h");$("#xo-note").textContent=t(lang,"xo_note");$("#xo-name-l").textContent=t(lang,"th_name");$("#xo-cty-l").textContent=t(lang,"country");$("#xo-last-l").textContent=t(lang,"xo_last");$("#xo-add").textContent=t(lang,"xo_add");
+    $("#lib-h").textContent=t(lang,"lib_h");$("#lib-note").textContent=t(lang,"lib_note");
+    $("#au-h").textContent=t(lang,"au_h");$("#au-note").textContent=t(lang,"au_note");$("#au-time").textContent=t(lang,"au_time");$("#au-action").textContent=t(lang,"au_action");$("#au-actor").textContent=t(lang,"au_actor");$("#au-tool").textContent=t(lang,"au_tool");$("#au-res").textContent=t(lang,"au_res");
+    $("#foot").textContent=t(lang,"foot");
+    fillSelects();renderChips();renderPerm();showTab();
+  }
+  function fillSelects(){
+    var ctys=[["","전체"],["KR","한국"],["JP","일본"],["VN","베트남"],["SG","싱가포르"]];
+    function opts(sel,arr,skipAll){if(!sel)return;sel.innerHTML="";arr.forEach(function(o){if(skipAll&&o[0]==="")return;sel.appendChild(el("option",{value:o[0]},o[1]));});}
+    opts($("#q-ncountry"),ctys,true);opts($("#pp-cty"),ctys);opts($("#sc-cty"),ctys,true);opts($("#hi-cty"),ctys,true);opts($("#xo-cty"),ctys,true);
+    var types=[["TRAINING","교육비"],["HIRE","채용 품의"],["EVENT","경조사"],["GENERAL","일반"]];opts($("#q-type"),types);
+    var deciders=S.db().people.filter(function(p){return p.team==="HR"||p.team==="LEAD";});var ds=$("#q-decider");if(ds){ds.innerHTML="";deciders.forEach(function(p){ds.appendChild(el("option",{value:p.name},p.name));});}
+    var teams=["","OP","GSM","SCM","FIN","HR","IT","DEV","MKT","AIR","LEAD"];var pt=$("#pp-team");if(pt){pt.innerHTML="";teams.forEach(function(x){pt.appendChild(el("option",{value:x},x||"전체 팀"));});}
+    var poss=["OP Specialist","GSM Manager","SCM Analyst","Backend Dev","HR Partner","Content Editor"];var sp=$("#sc-pos");if(sp){sp.innerHTML="";poss.forEach(function(x){sp.appendChild(el("option",{value:x},x));});}
+    var auds=["","SCM","OP","GSM","AIR","FIN","DEV","HR","LEAD","MKT"];var la=$("#lib-aud");if(la){la.innerHTML="";auds.forEach(function(x){la.appendChild(el("option",{value:x},x||"ALL"));});}
+  }
+
+  /* ---------- OHMY ONE AI bar ---------- */
+  var STAGES=["USER","CLAUDE","MCP","권한","SQL","감사"];
+  function drawPipe(active,rej){var p=$("#pipe");p.innerHTML="";STAGES.forEach(function(s,i){var n=el("span",{class:"node"+(rej!=null&&i===rej?" rej":i<active?" on":"")},'<span class="i"></span>'+s);p.appendChild(n);});}
+  drawPipe(0,null);
+  function renderChips(){var c=$("#aichips");c.innerHTML="";I18N.chips(role).forEach(function(ch){var b=el("button",{class:"aichip"},I18N.chipLabel(lang,ch[0]));b.onclick=function(){runAI(ch[0],null,I18N.chipLabel(lang,ch[0]));};c.appendChild(b);});}
+  $("#send").onclick=function(){var v=$("#ask").value;if(!v.trim())return;var r=AI.route(v);if(!r){showMsg(v,{kind:"deny_note"});return;}runAI(r.intent,r.args,v);};
+  $("#ask").addEventListener("keydown",function(e){if(e.key==="Enter")$("#send").click();});
+  function runAI(intent,args,q){if(busy)return;var res=AI.call(role,intent,args);if(!res){showMsg(q,{kind:"deny_note"});return;}
+    busy=true;var allowed=res.ok,step=0,rej=3;
+    (function tick(){if(allowed){step++;drawPipe(step,null);if(step<6)setTimeout(tick,110);else fin();}else{step++;if(step<rej){drawPipe(step,null);setTimeout(tick,110);}else{drawPipe(rej,rej);setTimeout(function(){drawPipe(6,rej);fin();},110);}}})();
+    function fin(){showMsg(q,res);busy=false;$("#ask").value="";renderFeed();
+      if(res.ok&&res.data&&res.data.refresh){res.data.refresh.forEach(function(tb){if(tb===tab)renderTab();});}
+      if(!$("#tab-audit").classList.contains("hidden"))renderAudit();}
+  }
+  function showMsg(q,res){var ans=$("#ans");var m=el("div",{class:"msg"+((res.kind==="deny"||res.kind==="deny_note")?" deny":"")});
+    var head='<div class="q"><b>'+t(lang,"role_"+role)+"</b> — “"+esc(q)+"”</div>";var body="",prov="";
+    if(res.kind==="deny_note"){body='<div class="a"><p>'+t(lang,"unrecognized")+"</p></div>";}
+    else if(res.kind==="deny"){body='<div class="a"><p><b>'+t(lang,"denied",{perm:'<span class="nop">'+esc(res.need)+"</span>"})+"</b></p><p class='note'>"+t(lang,"denied_note")+"</p></div>";prov='<div class="prov"><span>권한 <span class="nop">'+esc(res.need)+' ✗</span></span><span>감사 <b>PERMISSION_DENIED</b></span></div>';}
+    else{body='<div class="a">'+renderData(res.data)+"</div>";prov='<div class="prov"><span>도구 <b>'+esc(res.tool)+'</b></span><span>권한 <span class="okp">'+esc(res.perm)+' ✓</span></span><span>출처 <b>localStorage(DB)</b></span><span>감사 <b>'+esc(res.audit)+"</b></span></div>";}
+    m.innerHTML=head+body+prov;if(ans.firstChild&&ans.firstChild.className==="empty")ans.innerHTML="";ans.insertBefore(m,ans.firstChild);}
+  function renderData(d){
+    if(d.kind==="action"||d.text){return "<p>"+esc(d.text)+"</p>"+(d.insight?'<p class="insight">💡 '+esc(d.insight)+"</p>":"");}
+    if(d.rows&&d.cols){var h="<div class='tbl'><table><thead><tr>"+d.cols.map(function(c){return "<th>"+esc(c)+"</th>";}).join("")+"</tr></thead><tbody>";
+      d.rows.forEach(function(r){h+="<tr>"+r.map(function(c,i){return "<td"+(i?' class=num':'')+">"+(typeof c==="number"?'<span class=fig>'+c+"</span>":esc(c))+"</td>";}).join("")+"</tr>";});
+      if(d.total)h+="<tr>"+d.total.map(function(c,i){return "<td"+(i?' class=num':'')+"><b>"+esc(c)+"</b></td>";}).join("")+"</tr>";
+      h+="</tbody></table></div>";return h+(d.insight?'<p class="insight">💡 '+esc(d.insight)+"</p>":"");}
+    if(d.rows&&d.rows[0]&&d.rows[0].todo!==undefined){ // exits
+      return d.rows.map(function(x){var pct=Math.round(x.done/x.total*100);return "<p><b>"+esc(x.name)+"</b> · "+esc(x.country)+" · "+t(lang,"xo_last")+" "+x.last+"</p><div class='row'><span class='bar'><i style='width:"+pct+"%'></i></span><span class='note'>"+x.done+"/"+x.total+"</span></div>"+(x.todo.length?"<p class='note'>미완료: "+x.todo.map(esc).join(", ")+"</p>":"<p class='note' style='color:var(--ok)'>완료</p>");}).join("")+'<p class="insight">💡 최종근무일이 가까운데 자산 반납·계정 회수·급여 정산이 남으면 리스크입니다. AI에게 "Tom 자산 반납 체크해줘"처럼 처리할 수 있습니다.</p>';}
+    if(d.rows&&d.rows[0]&&d.rows[0].status!==undefined){ // decisions
+      return d.rows.length?d.rows.map(function(x){return "<p>• "+esc(x.title)+" <span class='pill'>"+esc(x.type)+"</span> · "+esc(x.requester)+" → "+esc(x.decider)+" · <span class='pill "+(x.status==="approved"?"ok":"warn")+"'>"+(x.status==="approved"?t(lang,"approved"):t(lang,"pending"))+"</span>"+(!d.readonly&&AI.can(role,"APPROVE")&&x.status==="pending"?" <button class='mini' data-appr='"+x.id+"'>승인</button>":"")+"</p>";}).join(""):"<p class='note'>"+t(lang,"pending")+" 0</p>";}
+    return "<p>—</p>";}
+
+  /* approve from AI answer */
+  document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-appr]");if(!b)return;if(!AI.can(role,"APPROVE"))return;
+    var id=b.getAttribute("data-appr");var d=S.db().decisions.find(function(x){return x.id===id;});if(d){d.status="approved";S.save();
+      var au=S.db();au.audit.unshift({id:"a"+(au.audit.length+1),ts:new Date().toISOString(),actor:t(lang,"role_"+role),action:"REQUEST_APPROVED",tool:"approve_request",success:true});S.save();
+      b.outerHTML="<span class='pill ok'>"+t(lang,"approved")+"</span>";renderHome();renderFeed();}});
+
+  function renderPerm(){/* permissions shown implicitly via chips; no-op placeholder */}
+  function renderFeed(){/* feed is the audit tab; also could show recent — keep audit tab canonical */}
+
+  /* ---------- TAB RENDERERS ---------- */
+  function renderTab(){if(tab==="home")renderHome();else if(tab==="people")renderPeople();else if(tab==="cands")renderCands();else if(tab==="hires")renderHires();else if(tab==="exits")renderExits();else if(tab==="lib")renderLib();else if(tab==="audit")renderAudit();}
+  function renderHome(){
+    var db=S.db();
+    var pend=db.decisions.filter(function(d){return d.status==="pending";});
+    $("#al-sub").textContent=pend.length+" 건";
+    $("#al-list").innerHTML=pend.length?pend.map(function(d){return "<div class='check'><span class='pill warn'>"+esc(d.type)+"</span> <b>"+esc(d.title)+"</b> <span class='note'>"+esc(d.requester)+" → "+esc(d.decider)+"</span>"+(AI.can(role,"APPROVE")?" <button class='mini' data-appr='"+d.id+"' style='margin-left:auto'>승인</button>":"")+"</div>";}).join(""):"<p class='empty'>대기 없음</p>";
+    // talent focus = upcoming hires + open exits
+    var tal=[];db.hires.forEach(function(h){tal.push(["입사 예정",h.name+" · "+h.start]);});db.exits.forEach(function(x){var open=XK.filter(function(k){return !x.checks[k];}).length;if(open)tal.push(["오프보딩 "+open+"건 남음",x.name+" · "+x.last]);});
+    $("#talent-home").innerHTML=tal.slice(0,6).map(function(c){return "<div class='tc'><b>"+esc(c[1])+"</b><span>"+esc(c[0])+"</span></div>";}).join("")||"<p class='empty'>—</p>";
+    // q-list
+    $("#q-list").innerHTML=db.decisions.map(function(d){return "<div class='note' style='padding:4px 0'>• "+esc(d.title)+" <span class='pill "+(d.status==="approved"?"ok":"warn")+"'>"+(d.status==="approved"?t(lang,"approved"):t(lang,"pending"))+"</span></div>";}).join("");
+  }
+  $("#q-add").onclick=function(){if(!AI.can(role,"SUBMIT")){$("#q-st").textContent=t(lang,"denied",{perm:"SUBMIT"});return;}var title=$("#q-title").value.trim();if(!title){$("#q-st").textContent="제목을 입력하세요";return;}
+    var db=S.db();db.decisions.unshift({id:"D"+(db.decisions.length+1),type:$("#q-type").value,title:title,country:$("#q-ncountry").value,requester:t(lang,"role_"+role),decider:$("#q-decider").value,detail:$("#q-detail").value,status:"pending"});
+    db.audit.unshift({id:"a"+(db.audit.length+1),ts:new Date().toISOString(),actor:t(lang,"role_"+role),action:"REQUEST_SUBMITTED",tool:"submit_request",success:true});S.save();
+    $("#q-title").value="";$("#q-detail").value="";$("#q-st").textContent="상신됨";renderHome();};
+
+  function renderPeople(){var db=S.db();var cty=$("#pp-cty").value,team=$("#pp-team").value,q=($("#pp-q").value||"").toLowerCase();
+    var list=db.people.filter(function(p){return (!cty||p.country===cty)&&(!team||p.team===team)&&(!q||p.name.toLowerCase().indexOf(q)>=0);});
+    $("#pp-sum").textContent=list.length+" / "+db.people.length;
+    var tb=$("#pp-table");tb.querySelector("thead").innerHTML="<tr><th>"+t(lang,"th_name")+"</th><th>"+t(lang,"country")+"</th><th>"+t(lang,"th_team")+"</th><th>"+t(lang,"th_role")+"</th><th>"+t(lang,"th_start")+"</th><th></th></tr>";
+    tb.querySelector("tbody").innerHTML=list.map(function(p){return "<tr><td>"+esc(p.name)+"</td><td>"+(CTRY[p.country]||p.country)+"</td><td>"+esc(p.team)+"</td><td>"+esc(p.role)+"</td><td class=num>"+esc(p.start)+"</td><td>"+(AI.can(role,"WRITE_ALL")?"<button class='mini ghost' data-delp='"+p.id+"'>삭제</button>":"")+"</td></tr>";}).join("")||"<tr><td colspan=6 class=empty>—</td></tr>";
+  }
+  ["#pp-cty","#pp-team","#pp-q"].forEach(function(s){var e=$(s);if(e)e.addEventListener("input",renderPeople);});
+  $("#pp-add").onclick=function(){if(!AI.can(role,"WRITE_ALL")){alert(t(lang,"denied",{perm:"WRITE_ALL"}));return;}var name=prompt("이름?");if(!name)return;var db=S.db();db.people.push({id:"P"+(db.people.length+1),name:name,country:$("#pp-cty").value||"KR",team:$("#pp-team").value||"OP",role:"-",start:new Date().toISOString().slice(0,10)});logW("PERSON_ADDED","add_person");S.save();renderPeople();};
+  $("#pp-paste-btn").onclick=function(){$("#pp-paste").classList.toggle("hidden");};
+  $("#pp-paste-go").onclick=function(){if(!AI.can(role,"WRITE_ALL")){$("#pp-paste-st").textContent=t(lang,"denied",{perm:"WRITE_ALL"});return;}var txt=$("#pp-paste-text").value.trim();if(!txt)return;var db=S.db();var n=0;
+    txt.split("\n").forEach(function(line){var c=line.split("\t");if(c[0]&&c[0].trim()){db.people.push({id:"P"+(db.people.length+1),name:c[0].trim(),country:(c[1]||"KR").trim(),team:(c[3]||c[2]||"OP").trim(),role:(c[2]||"-").trim(),start:(c[4]||"").trim()});n++;}});
+    logW("PEOPLE_IMPORTED","bulk_import");S.save();$("#pp-paste-text").value="";$("#pp-paste-st").textContent=n+"명 등록";renderPeople();};
+  document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-delp]");if(!b||!AI.can(role,"WRITE_ALL"))return;var db=S.db();db.people=db.people.filter(function(p){return p.id!==b.getAttribute("data-delp");});logW("PERSON_DELETED","delete_person");S.save();renderPeople();});
+
+  function renderCands(){var db=S.db();var st={applied:"지원",screen:"서류",interview:"면접",final:"최종",offer:"오퍼"};
+    $("#cd-sum").textContent=db.candidates.length+" 명";
+    var tb=$("#cd-table");tb.querySelector("thead").innerHTML="<tr><th>"+t(lang,"th_pos")+"</th><th>"+t(lang,"sc_name")+"</th><th>"+t(lang,"country")+"</th><th>DISC</th><th>"+t(lang,"th_stage")+"</th><th>적합도</th></tr>";
+    tb.querySelector("tbody").innerHTML=db.candidates.map(function(c){return "<tr><td>"+esc(c.pos)+"</td><td>"+esc(c.name)+"</td><td>"+(CTRY[c.country]||c.country)+"</td><td><span class='pill'>"+esc(c.disc)+"</span></td><td><span class='pill "+(c.stage==="offer"?"ok":"")+"'>"+(st[c.stage]||c.stage)+"</span></td><td>"+(c.score?"<span class='grade "+c.grade+"'>"+c.grade+"</span> "+c.score:"-")+"</td></tr>";}).join("")||"<tr><td colspan=6 class=empty>—</td></tr>";}
+  $("#sc-run").onclick=function(){if(!AI.can(role,"READ_HIRING")){$("#sc-st").textContent=t(lang,"denied",{perm:"READ_HIRING"});return;}
+    var name=$("#sc-name").value.trim()||"후보자";var resume=$("#sc-resume").value.trim();var disc=($("#sc-disc").value||"").toUpperCase();
+    // 결정론적 "AI" 평가 (샘플): 이력서 길이·키워드 + DISC로 점수
+    var kw=["hotel","ota","booking","sql","python","revenue","crm","b2b","api","settlement"];var hit=kw.filter(function(k){return resume.toLowerCase().indexOf(k)>=0;}).length;
+    var score=Math.min(98,40+hit*8+Math.min(20,Math.round(resume.length/40)));var grade=score>=85?"A":score>=70?"B":"C";
+    var discFit=/S|C/.test(disc)?"꼼꼼·안정 지향 — 운영/정산 적합":/D|I/.test(disc)?"주도·대인 — 영업/리드 적합":"균형형";
+    var db=S.db();db.candidates.unshift({id:"C"+(db.candidates.length+1),pos:$("#sc-pos").value,name:name,country:$("#sc-cty").value||"KR",stage:"screen",disc:disc||"-",score:score,grade:grade});
+    db.audit.unshift({id:"a"+(db.audit.length+1),ts:new Date().toISOString(),actor:t(lang,"role_"+role),action:"SCREENING_RUN",tool:"ai_screen",success:true});S.save();
+    $("#sc-result").innerHTML="<div class='panel' style='margin-top:8px'><div class='score'><div class='kv'><span class='k'>적합도</span><span class='v'>"+score+"<small>/100</small></span></div><div class='kv'><span class='k'>등급</span><span class='v'><span class='grade "+grade+"'>"+grade+"</span></span></div><div class='kv'><span class='k'>DISC</span><span class='v' style='font-size:16px'>"+esc(disc||"-")+"</span></div></div><p class='note'>키워드 적합 "+hit+"개 · "+discFit+"</p><p class='insight'>💡 OHMY ONE AI 평가(샘플). 후보자 탭에 등록되었습니다. 실제 배포 시 LLM이 이력서를 요약·평가합니다.</p></div>";
+    $("#sc-st").textContent="평가 완료 · 후보 등록";renderCands();};
+
+  function renderHires(){var db=S.db();$("#hi-list").innerHTML=db.hires.map(function(h){return "<div class='check'><b>"+esc(h.name)+"</b> <span class='note'>"+esc(h.role)+" · "+(CTRY[h.country]||h.country)+"</span><span class='note' style='margin-left:auto'>입사 "+h.start+" · 수습 "+h.prob+"일</span>"+(AI.can(role,"WRITE_ALL")?" <button class='mini ghost' data-delh='"+h.id+"'>삭제</button>":"")+"</div>";}).join("")||"<p class='empty'>—</p>";}
+  $("#hi-add").onclick=function(){if(!AI.can(role,"WRITE_ALL")){$("#hi-st").textContent=t(lang,"denied",{perm:"WRITE_ALL"});return;}var name=$("#hi-name").value.trim();if(!name){$("#hi-st").textContent="이름?";return;}var db=S.db();db.hires.unshift({id:"H"+(db.hires.length+1),name:name,role:$("#hi-role").value||"-",country:$("#hi-cty").value||"KR",start:$("#hi-start").value||"",prob:parseInt($("#hi-prob").value||"90",10)});logW("HIRE_ADDED","add_hire");S.save();$("#hi-name").value="";$("#hi-st").textContent="등록";renderHires();};
+  document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-delh]");if(!b||!AI.can(role,"WRITE_ALL"))return;var db=S.db();db.hires=db.hires.filter(function(h){return h.id!==b.getAttribute("data-delh");});logW("HIRE_DELETED","delete_hire");S.save();renderHires();});
+
+  function renderExits(){var db=S.db();$("#xo-list").innerHTML=db.exits.map(function(x){var done=XK.filter(function(k){return x.checks[k];}).length;var pct=Math.round(done/XK.length*100);
+    var checks=XK.map(function(k){return "<label class='check' style='border:0;padding:3px 0'><input type='checkbox' data-xo='"+x.id+"' data-k='"+k+"' "+(x.checks[k]?"checked":"")+(AI.can(role,"WRITE_ALL")?"":" disabled")+"> <span>"+XKN[k]+"</span></label>";}).join("");
+    return "<div class='panel'><div class='row' style='justify-content:space-between'><b>"+esc(x.name)+" · "+(CTRY[x.country]||x.country)+"</b><span class='note'>"+t(lang,"xo_last")+" "+x.last+" · "+done+"/"+XK.length+"</span></div><div class='bar'><i style='width:"+pct+"%'></i></div><div style='columns:2;gap:16px'>"+checks+"</div></div>";}).join("")||"<p class='empty'>—</p>";}
+  $("#xo-add").onclick=function(){if(!AI.can(role,"WRITE_ALL")){$("#xo-st").textContent=t(lang,"denied",{perm:"WRITE_ALL"});return;}var name=$("#xo-name").value.trim();if(!name){$("#xo-st").textContent="이름?";return;}var db=S.db();var ch={};XK.forEach(function(k){ch[k]=0;});db.exits.unshift({id:"X"+(db.exits.length+1),name:name,country:$("#xo-cty").value||"KR",last:$("#xo-last").value||"",checks:ch});logW("EXIT_ADDED","add_exit");S.save();$("#xo-name").value="";$("#xo-st").textContent="등록";renderExits();};
+  document.addEventListener("change",function(ev){var c=ev.target;if(!c.matches||!c.matches("[data-xo]"))return;if(!AI.can(role,"WRITE_ALL")){c.checked=!c.checked;return;}var db=S.db();var x=db.exits.find(function(e){return e.id===c.getAttribute("data-xo");});if(x){x.checks[c.getAttribute("data-k")]=c.checked?1:0;logW("OFFBOARD_UPDATED","update_offboarding");S.save();renderExits();renderHome();}});
+
+  function renderLib(){var mats=[["온보딩 기본 과정","HR","A"],["정산 프로세스 교육","FIN","A"],["OTA 매핑 가이드","OP","B"],["리더십 과정","LEAD","B"],["보안 필수 교육","DEV","A"],["CS 응대 매뉴얼","GSM","C"]];
+    var q=($("#lib-q").value||"").toLowerCase(),aud=$("#lib-aud").value;
+    $("#lib-list").innerHTML="<div class='tbl'><table><thead><tr><th>자료</th><th>대상</th><th>우선</th></tr></thead><tbody>"+mats.filter(function(m){return (!q||m[0].toLowerCase().indexOf(q)>=0)&&(!aud||m[1]===aud);}).map(function(m){return "<tr><td>"+m[0]+"</td><td><span class='pill'>"+m[1]+"</span></td><td><span class='grade "+m[2]+"'>"+m[2]+"</span></td></tr>";}).join("")+"</tbody></table></div>";}
+  ["#lib-q","#lib-aud"].forEach(function(s){var e=$(s);if(e)e.addEventListener("input",renderLib);});
+
+  function renderAudit(){$("#au-body").innerHTML=S.db().audit.slice(0,100).map(function(a){return "<tr class='"+(a.success?"":"fail")+"'><td class=num>"+a.id+"</td><td class=num>"+hhmm(a.ts)+"</td><td class=num><b>"+a.action+"</b></td><td>"+esc(a.actor)+"</td><td class=num>"+esc(a.tool)+"</td><td>"+(a.success?"<span class='pill ok'>✓</span>":"<span class='pill bad'>✗</span>")+"</td></tr>";}).join("")||"<tr><td colspan=6 class=empty>—</td></tr>";}
+  function logW(action,tool){var db=S.db();db.audit.unshift({id:"a"+(db.audit.length+1),ts:new Date().toISOString(),actor:t(lang,"role_"+role),action:action,tool:tool,success:true});}
+
+  $("#brand-home").onclick=function(){tab="home";showTab();};
+  $("#ans").innerHTML="";
+  applyAll();
+})();
+</script>
+</body>
+</html>
